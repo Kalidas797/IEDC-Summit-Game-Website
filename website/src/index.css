@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-zinc-950 text-zinc-100 font-sans antialiased selection:bg-lime-400 selection:text-black;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-lime-400 text-black font-bold uppercase tracking-wider py-4 px-8 border-2 border-lime-400 hover:bg-transparent hover:text-lime-400 transition-all duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-zinc-900 text-zinc-100 font-bold uppercase tracking-wider py-4 px-8 border-2 border-zinc-800 hover:border-cyan-400 hover:text-cyan-400 transition-all duration-200;
+  }
+
+  .game-card {
+    @apply bg-zinc-900 border border-zinc-800 p-6 flex flex-col gap-4 hover:border-lime-400 transition-colors cursor-pointer;
+  }
+}
