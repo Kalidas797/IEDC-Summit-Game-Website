@@ -15,6 +15,10 @@ export default function App() {
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [players, setPlayers] = useState<any[]>([]);
 
+  // Update mechanism
+  const [currentCommit, setCurrentCommit] = useState<string | null>(null);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+
   useEffect(() => {
     if (session) {
       fetchGames();
@@ -38,6 +42,37 @@ export default function App() {
       };
     }
   }, [session]);
+
+  // Update mechanism
+  const [currentVersion, setCurrentVersion] = useState<string | null>(null);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+
+  // OTA Update Checker (polls /version.json hosted on Vercel)
+  useEffect(() => {
+    const checkUpdate = async () => {
+      try {
+        // Cache bust the request to ensure we get the fresh file
+        const res = await fetch(`/version.json?t=${Date.now()}`);
+        const data = await res.json();
+        if (data && data.version) {
+          if (!currentVersion) {
+            // First load, save current version
+            setCurrentVersion(data.version);
+          } else if (data.version !== currentVersion) {
+            // Version changed! Update available.
+            setUpdateAvailable(true);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to check for updates", err);
+      }
+    };
+    
+    // Check initially and then every 30 seconds
+    checkUpdate();
+    const interval = setInterval(checkUpdate, 30000);
+    return () => clearInterval(interval);
+  }, [currentVersion]);
 
   const fetchGames = async () => {
     const { data } = await supabase.from('games').select('*').order('display_order');
@@ -130,6 +165,34 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background text-text overflow-x-hidden relative">
       
+      {/* Update Banner */}
+      <AnimatePresence>
+        {updateAvailable && (
+          <motion.div 
+            initial={{ y: -100 }} 
+            animate={{ y: 0 }} 
+            exit={{ y: -100 }}
+            className="fixed top-0 left-0 w-full z-[100] bg-cyan-500 text-black font-bold uppercase tracking-widest p-3 flex justify-between items-center px-6 shadow-[0_0_20px_rgba(34,211,238,0.5)]"
+          >
+            <span className="flex items-center gap-2"><Activity size={18} /> New Update Available!</span>
+            <button 
+              onClick={() => {
+                // Clear cache and reload
+                if ('caches' in window) {
+                  caches.keys().then((names) => {
+                    names.forEach(name => caches.delete(name));
+                  });
+                }
+                window.location.reload();
+              }}
+              className="bg-black text-cyan-500 px-4 py-1 rounded-full text-xs font-black hover:bg-zinc-800 transition-colors"
+            >
+              Update Now
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Mobile Top Bar */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-gray-800 bg-surface z-40">
         <div className="text-primary font-black text-xl tracking-tighter">PL//ADMIN</div>
