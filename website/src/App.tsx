@@ -213,18 +213,18 @@ export default function App() {
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8 max-w-7xl mx-auto w-full">
-              {games.map((game, index) => {
+              {games.filter(g => g.enabled).map((game, index) => {
                 const info = gameInfoMap[game.slug] || gameInfoMap['reaction'];
                 const Icon = info.icon || Play;
-                const isAvailable = game.enabled;
+                const isAvailable = true; // since we filtered them
                 return (
                   <motion.div 
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
                     key={game.id} 
-                    className={`relative overflow-hidden group transition-all duration-300 ${isAvailable ? 'cursor-pointer hover:scale-[1.02]' : 'cursor-not-allowed opacity-50 grayscale'}`}
-                    onClick={() => isAvailable && startGame(game.slug)}
+                    className={`relative overflow-hidden group transition-all duration-300 cursor-pointer hover:scale-[1.02]`}
+                    onClick={() => startGame(game.slug)}
                   >
                     {/* Brutalist Card Background */}
                     <div className="absolute inset-0 bg-zinc-900 border-l-4 border-zinc-800 transition-colors group-hover:border-lime-400" />
@@ -251,15 +251,9 @@ export default function App() {
 
                       {/* Status Indicator */}
                       <div className="hidden sm:flex flex-col items-end">
-                        {isAvailable ? (
-                          <div className="bg-lime-400 text-zinc-950 font-black uppercase text-xs px-3 py-1 animate-pulse">
-                            Ready
-                          </div>
-                        ) : (
-                          <div className="border border-zinc-700 text-zinc-600 font-bold uppercase text-xs px-3 py-1">
-                            Locked
-                          </div>
-                        )}
+                        <div className="bg-lime-400 text-zinc-950 font-black uppercase text-xs px-3 py-1 animate-pulse">
+                          Ready
+                        </div>
                       </div>
                     </div>
                   </motion.div>
