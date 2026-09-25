@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, LogIn, Activity, Settings, Users, Database, Edit, Trash2, Power, Menu, X } from 'lucide-react';
 import { supabase } from './supabase';
 import type { Game } from '../../shared/types';
@@ -91,32 +92,37 @@ export default function App() {
 
   if (!session) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8 bg-background text-text">
-        <div className="w-full max-w-md admin-card items-center text-center">
-          <Lock size={48} className="text-secondary mb-4" />
-          <h1 className="text-2xl font-mono font-bold tracking-widest uppercase mb-2 text-primary">
+      <div className="min-h-screen flex items-center justify-center p-8 bg-background relative overflow-hidden">
+        {/* Glow behind login box */}
+        <div className="absolute w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        
+        <motion.div initial={{opacity:0, scale:0.9}} animate={{opacity:1, scale:1}} className="w-full max-w-md admin-card items-center text-center relative z-10 p-10">
+          <div className="p-4 bg-secondary/10 rounded-full mb-6">
+            <Lock size={40} className="text-secondary" />
+          </div>
+          <h1 className="text-3xl font-black tracking-widest uppercase mb-2 text-white glow-text">
             Admin Access
           </h1>
-          <p className="text-muted text-sm mb-8 font-mono">PAPERLAB GAMES ARENA</p>
+          <p className="text-secondary font-mono text-sm mb-10 tracking-widest uppercase">PAPERLAB GAMES ARENA</p>
           
           <input 
             type="email" 
             placeholder="Event Staff Email" 
-            className="w-full p-4 bg-background border border-gray-800 text-white font-mono focus:border-secondary outline-none transition-colors mb-4" 
+            className="w-full p-4 bg-black/50 border border-white/10 text-white font-mono focus:border-secondary outline-none rounded-lg transition-colors mb-4 placeholder:text-zinc-600" 
           />
           <input 
             type="password" 
             placeholder="Passcode" 
-            className="w-full p-4 bg-background border border-gray-800 text-white font-mono focus:border-secondary outline-none transition-colors mb-8" 
+            className="w-full p-4 bg-black/50 border border-white/10 text-white font-mono focus:border-secondary outline-none rounded-lg transition-colors mb-8 placeholder:text-zinc-600" 
           />
           
           <button 
-            className="btn-primary w-full flex justify-center items-center gap-2"
+            className="btn-primary w-full flex justify-center items-center gap-3 py-4 text-lg"
             onClick={() => setSession(true)}
           >
-            <LogIn size={20} /> Authorize
+            <LogIn size={20} /> Authorize System
           </button>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -141,8 +147,10 @@ export default function App() {
       )}
 
       {/* Sidebar Navigation */}
-      <div className={`fixed md:relative inset-y-0 left-0 z-50 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 w-64 border-r border-gray-800 bg-surface p-6 flex flex-col gap-6 font-mono text-sm uppercase`}>
-        <div className="hidden md:block text-primary font-black text-xl mb-8 tracking-tighter">PL//ADMIN</div>
+      <div className={`fixed md:relative inset-y-0 left-0 z-50 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-300 w-72 glass-panel p-8 flex flex-col gap-4 font-mono text-sm uppercase shadow-2xl`}>
+        <div className="hidden md:flex items-center gap-3 text-primary font-black text-2xl mb-12 tracking-tighter glow-text">
+          <Database size={28} /> PL//ADMIN
+        </div>
         
         <button 
           onClick={() => { setActiveTab('dashboard'); setIsSidebarOpen(false); }}
@@ -168,7 +176,7 @@ export default function App() {
         >
           <Users size={18} /> Players & Ranks
         </button>
-        <button className="flex items-center gap-3 text-muted hover:text-white transition-colors">
+        <button className="flex items-center gap-3 text-muted hover:text-white hover:bg-white/5 p-3 rounded-xl transition-all">
           <Settings size={18} /> Settings
         </button>
       </div>
@@ -193,8 +201,9 @@ export default function App() {
           </button>
         </header>
 
+        <AnimatePresence mode="wait">
         {activeTab === 'dashboard' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-20}} className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="admin-card">
               <span className="text-muted font-mono text-xs">TOTAL PLAYERS</span>
               <div className="text-4xl font-bold">{totalPlayers}</div>
@@ -209,11 +218,11 @@ export default function App() {
                  <span className="w-3 h-3 bg-lime-400 rounded-full animate-pulse"></span> ONLINE
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {activeTab === 'modules' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-20}} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {games.map(game => (
               <div key={game.id} className="admin-card">
                 <div className="flex justify-between items-center mb-2">
@@ -229,15 +238,17 @@ export default function App() {
               </div>
             ))}
             {games.length === 0 && <p className="text-muted">No games found in database.</p>}
-          </div>
+          </motion.div>
         )}
 
         {activeTab === 'content' && (
-          <ContentEditor />
+          <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-20}}>
+            <ContentEditor />
+          </motion.div>
         )}
 
         {activeTab === 'players' && (
-          <div className="flex flex-col gap-6">
+          <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-20}} className="flex flex-col gap-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold uppercase tracking-wider">Leaderboard Moderation</h2>
               <button 
@@ -279,8 +290,9 @@ export default function App() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
     </div>
   );

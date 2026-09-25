@@ -1,21 +1,43 @@
 @import "tailwindcss";
 
+@theme {
+  --color-background: #09090b;
+  --color-surface: rgba(24, 24, 27, 0.7);
+  --color-primary: #a3e635; /* lime-400 */
+  --color-secondary: #22d3ee; /* cyan-400 */
+  --color-danger: #ef4444;
+  --color-text: #f4f4f5;
+  --color-muted: #a1a1aa;
+}
+
 @layer base {
   body {
-    @apply bg-zinc-950 text-zinc-100 font-sans antialiased;
+    @apply bg-background text-text font-sans antialiased min-h-screen relative;
+    /* Soft premium gradient background */
+    background: radial-gradient(circle at 15% 50%, rgba(163, 230, 53, 0.08), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(34, 211, 238, 0.08), transparent 25%),
+                #09090b;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-lime-400 text-black font-bold uppercase tracking-wider py-3 px-6 border-2 border-lime-400 hover:bg-transparent hover:text-lime-400 transition-all duration-200;
+    @apply relative overflow-hidden bg-primary text-black font-bold uppercase tracking-wider py-3 px-6 rounded-lg shadow-[0_0_20px_rgba(163,230,53,0.3)] hover:shadow-[0_0_30px_rgba(163,230,53,0.5)] hover:scale-105 active:scale-95 transition-all duration-300;
   }
   
   .btn-secondary {
-    @apply bg-zinc-900 text-zinc-100 font-bold uppercase tracking-wider py-3 px-6 border-2 border-zinc-800 hover:border-cyan-400 hover:text-cyan-400 transition-all duration-200;
+    @apply bg-zinc-900/80 backdrop-blur-md text-text font-bold uppercase tracking-wider py-3 px-6 rounded-lg border border-zinc-800 hover:border-secondary hover:text-secondary hover:shadow-[0_0_20px_rgba(34,211,238,0.2)] transition-all duration-300;
   }
 
   .admin-card {
-    @apply bg-zinc-900 border border-zinc-800 p-6 flex flex-col gap-4;
+    @apply bg-surface backdrop-blur-xl border border-white/5 rounded-2xl p-6 flex flex-col gap-4 shadow-xl transition-all duration-300 hover:border-white/10;
+  }
+
+  .glass-panel {
+    @apply bg-zinc-900/60 backdrop-blur-2xl border-r border-white/5;
+  }
+
+  .glow-text {
+    text-shadow: 0 0 20px rgba(163, 230, 53, 0.5);
   }
 }

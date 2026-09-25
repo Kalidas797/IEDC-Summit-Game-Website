@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabase';
-import { Edit, Trash2, Upload, Box } from 'lucide-react';
+import { Edit, Trash2, Upload, Box, Check, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ContentEditor() {
   const [activeGameSlug, setActiveGameSlug] = useState<'memory' | 'ai-or-human'>('memory');
@@ -136,22 +137,22 @@ export default function ContentEditor() {
 
   if (isEditing) {
     return (
-      <div className="flex flex-col gap-4 bg-zinc-900/50 p-6 border border-zinc-800">
-        <h2 className="text-xl font-bold uppercase text-cyan-400 mb-4">{editId ? 'Edit' : 'Create'} {activeGameSlug} Challenge</h2>
+      <motion.div initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} exit={{opacity:0}} className="flex flex-col gap-6 admin-card">
+        <h2 className="text-2xl font-black uppercase text-secondary mb-2 glow-text tracking-widest">{editId ? 'Edit' : 'Create'} {activeGameSlug} Challenge</h2>
         
-        <input className="p-3 bg-black border border-zinc-800 text-white font-mono w-full outline-none focus:border-cyan-400" value={title} onChange={e=>setTitle(e.target.value)} placeholder="Challenge Title" />
+        <input className="p-4 bg-black/50 backdrop-blur-md border border-white/10 text-white font-mono w-full outline-none focus:border-secondary rounded-lg transition-colors" value={title} onChange={e=>setTitle(e.target.value)} placeholder="Challenge Title" />
         
-        <div className="flex gap-8 items-center mt-2">
+        <div className="flex gap-8 items-center mt-2 p-4 bg-black/30 rounded-lg border border-white/5">
           <label className="flex gap-2 items-center cursor-pointer">
             <input type="checkbox" checked={isActive} onChange={e=>setIsActive(e.target.checked)} className="w-5 h-5 accent-cyan-400" />
             <span className="font-mono text-sm uppercase text-zinc-400 tracking-widest">Active Status</span>
           </label>
         </div>
 
-        <div className="flex gap-4 items-center mt-2">
-          <input className="p-3 bg-black border border-zinc-800 text-white font-mono flex-1 outline-none focus:border-cyan-400" value={storagePath} onChange={e=>setStoragePath(e.target.value)} placeholder="Supabase Storage Path (e.g. 1234_file.png)" />
-          <label className="btn-secondary cursor-pointer flex items-center gap-2 px-6">
-            <Upload size={16} /> UPLOAD
+        <div className="flex flex-col md:flex-row gap-4 items-center mt-2 p-4 bg-black/30 rounded-lg border border-white/5">
+          <input className="p-3 bg-black/50 border border-white/10 text-white font-mono flex-1 outline-none focus:border-secondary rounded-lg w-full" value={storagePath} onChange={e=>setStoragePath(e.target.value)} placeholder="Supabase Storage Path (e.g. 1234_file.png)" />
+          <label className="btn-secondary cursor-pointer flex items-center justify-center gap-2 px-6 w-full md:w-auto h-full m-0 hover:bg-secondary/20">
+            <Upload size={18} /> UPLOAD MEDIA
             <input type="file" onChange={handleFileUpload} className="hidden" />
           </label>
         </div>
@@ -159,9 +160,9 @@ export default function ContentEditor() {
         {/* Memory Game Specific Config */}
         {activeGameSlug === 'memory' && (
           <>
-            <label className="flex gap-2 items-center mt-4">
+            <label className="flex gap-4 items-center mt-4 p-4 bg-black/30 rounded-lg border border-white/5">
               <span className="font-mono text-sm uppercase text-zinc-400 tracking-widest">Display Duration (ms):</span>
-              <input type="number" className="p-2 bg-black border border-zinc-800 text-white font-mono w-32 outline-none focus:border-cyan-400" value={displayDuration} onChange={e=>setDisplayDuration(Number(e.target.value))} />
+              <input type="number" className="p-3 bg-black/50 border border-white/10 text-white font-mono w-32 outline-none focus:border-secondary rounded-lg" value={displayDuration} onChange={e=>setDisplayDuration(Number(e.target.value))} />
             </label>
 
             <h3 className="font-bold uppercase mt-6 border-b border-zinc-800 pb-2 text-zinc-400">Questions Array</h3>
@@ -219,63 +220,65 @@ export default function ContentEditor() {
           </div>
         )}
         
-        <div className="flex gap-4 mt-8 pt-4 border-t border-zinc-800">
-          <button className="btn-primary bg-cyan-500 hover:bg-cyan-400 text-black px-8" onClick={handleSave}>SAVE TO SUPABASE</button>
-          <button className="btn-secondary px-8" onClick={()=>setIsEditing(false)}>CANCEL</button>
+        <div className="flex gap-4 mt-8 pt-6 border-t border-white/10 justify-end">
+          <button className="btn-secondary px-8 hover:text-danger hover:border-danger hover:shadow-[0_0_20px_rgba(239,68,68,0.2)]" onClick={()=>setIsEditing(false)}>CANCEL</button>
+          <button className="btn-primary" onClick={handleSave}>SAVE TO CLOUD</button>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex flex-col gap-6">
        
-       <div className="flex gap-4 border-b border-zinc-800 pb-4">
-          <button onClick={() => setActiveGameSlug('memory')} className={`flex items-center gap-2 font-bold uppercase tracking-widest ${activeGameSlug === 'memory' ? 'text-lime-400' : 'text-zinc-500 hover:text-zinc-300'}`}>
-            <Box size={16} /> Remember the Paper
+       <div className="flex gap-4 border-b border-white/10 pb-4 overflow-x-auto">
+          <button onClick={() => setActiveGameSlug('memory')} className={`flex items-center gap-2 font-bold uppercase tracking-widest px-4 py-2 rounded-lg transition-all ${activeGameSlug === 'memory' ? 'bg-primary text-black shadow-[0_0_15px_rgba(163,230,53,0.3)]' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}>
+            <Box size={18} /> Remember the Paper
           </button>
-          <button onClick={() => setActiveGameSlug('ai-or-human')} className={`flex items-center gap-2 font-bold uppercase tracking-widest ${activeGameSlug === 'ai-or-human' ? 'text-lime-400' : 'text-zinc-500 hover:text-zinc-300'}`}>
-            <Box size={16} /> AI or Human
+          <button onClick={() => setActiveGameSlug('ai-or-human')} className={`flex items-center gap-2 font-bold uppercase tracking-widest px-4 py-2 rounded-lg transition-all ${activeGameSlug === 'ai-or-human' ? 'bg-secondary text-black shadow-[0_0_15px_rgba(34,211,238,0.3)]' : 'text-zinc-500 hover:text-white hover:bg-white/5'}`}>
+            <Box size={18} /> AI or Human
           </button>
        </div>
 
-       <div className="flex justify-between items-center">
-         <h2 className="text-xl font-bold uppercase tracking-wider">Configure: {activeGameSlug}</h2>
-         <button className="btn-primary bg-lime-400 hover:bg-lime-300 text-black" onClick={handleAddNew}>+ NEW CHALLENGE</button>
+       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+         <h2 className="text-2xl font-black uppercase tracking-wider glow-text text-white">Configure: {activeGameSlug}</h2>
+         <button className="btn-primary flex gap-2 items-center" onClick={handleAddNew}>+ NEW CHALLENGE</button>
        </div>
 
-       <div className="admin-card bg-gray-900/50 overflow-x-auto">
+       <div className="admin-card overflow-x-auto p-0 border-white/5">
          <table className="w-full text-left font-mono text-sm min-w-[600px]">
-          <thead className="text-zinc-500 border-b border-zinc-800">
+          <thead className="bg-black/30 border-b border-white/5 text-zinc-400">
             <tr>
-              <th className="pb-4 font-normal">TITLE</th>
-              <th className="pb-4 font-normal">IMAGE PATH</th>
-              <th className="pb-4 font-normal">ACTIVE</th>
-              <th className="pb-4 font-normal text-right">ACTIONS</th>
+              <th className="p-4 font-normal">TITLE</th>
+              <th className="p-4 font-normal">IMAGE PATH</th>
+              <th className="p-4 font-normal text-center">ACTIVE</th>
+              <th className="p-4 font-normal text-right">ACTIONS</th>
             </tr>
           </thead>
           <tbody>
+            <AnimatePresence>
             {contents.map(c => (
-              <tr key={c.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
-                <td className="py-4 font-bold text-white">{c.title}</td>
-                <td className="py-4 text-xs text-zinc-500 truncate max-w-[200px]">{c.storage_path || 'No Image'}</td>
-                <td className="py-4">
-                   <span className={`px-2 py-1 text-[10px] uppercase font-bold tracking-widest ${c.is_active ? 'bg-lime-400 text-black' : 'bg-red-500 text-white'}`}>
+              <motion.tr initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, x:-20}} key={c.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <td className="p-4 font-bold text-white">{c.title}</td>
+                <td className="p-4 text-xs text-zinc-500 truncate max-w-[200px]">{c.storage_path || 'No Image'}</td>
+                <td className="p-4 text-center">
+                   <span className={`px-3 py-1 rounded-full text-[10px] uppercase font-black tracking-widest shadow-lg ${c.is_active ? 'bg-primary/20 text-primary border border-primary/50' : 'bg-danger/20 text-danger border border-danger/50'}`}>
                      {c.is_active ? 'YES' : 'NO'}
                    </span>
                 </td>
-                <td className="py-4 flex justify-end gap-4 text-zinc-500">
-                  <button className="hover:text-cyan-400 transition-colors" onClick={()=>handleEdit(c)}><Edit size={16} /></button>
-                  <button className="hover:text-red-400 transition-colors" onClick={()=>handleDelete(c.id)}><Trash2 size={16} /></button>
+                <td className="p-4 flex justify-end gap-4 text-zinc-500">
+                  <button className="hover:text-secondary hover:scale-110 transition-all p-2 bg-black/20 rounded-lg border border-white/5" onClick={()=>handleEdit(c)}><Edit size={16} /></button>
+                  <button className="hover:text-danger hover:scale-110 transition-all p-2 bg-black/20 rounded-lg border border-white/5" onClick={()=>handleDelete(c.id)}><Trash2 size={16} /></button>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
+            </AnimatePresence>
             {contents.length === 0 && (
-              <tr><td colSpan={4} className="py-8 text-center text-zinc-500 font-mono">NO CONTENT FOUND IN DATABASE</td></tr>
+              <tr><td colSpan={4} className="p-12 text-center text-zinc-600 font-mono text-lg animate-pulse">NO CONTENT FOUND IN DATABASE</td></tr>
             )}
           </tbody>
          </table>
        </div>
-    </div>
+    </motion.div>
   );
 }
