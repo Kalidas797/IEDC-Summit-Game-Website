@@ -26,7 +26,20 @@ export default function ContentEditor() {
 
   useEffect(() => {
     init(activeGameSlug);
-  }, [activeGameSlug]);
+    
+    const channel = supabase
+      .channel('public:game_content')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'game_content' }, () => {
+        if (dbGameId) {
+          fetchContents(dbGameId);
+        }
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeGameSlug, dbGameId]);
 
   const init = async (slug: string) => {
     const { data: g } = await supabase.from('games').select('id').eq('slug', slug).single();

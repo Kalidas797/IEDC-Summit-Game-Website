@@ -4,14 +4,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GameEngine from './games/GameEngine';
 import { supabase } from './supabase';
 
-const games = [
-  { id: 'reaction', title: 'Reaction Challenge', description: 'Test your reflexes. How fast are you?', time: '30s', difficulty: 'EASY', icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/30' },
-  { id: 'memory', title: 'Remember the Paper', description: 'Memorize the document before it vanishes.', time: '1m', difficulty: 'MEDIUM', icon: Brain, color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/30' },
-  { id: 'ai-or-human', title: 'AI or Human?', description: 'Can you spot the difference?', time: '45s', difficulty: 'MEDIUM', icon: User, color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/30' },
-  { id: 'spot-difference', title: 'Spot the Difference', description: 'Find the 5 changes.', time: '1m', difficulty: 'HARD', icon: Crosshair, color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/30' },
-  { id: 'doodle', title: 'Doodle Telephone', description: 'Draw, guess, and pass it on.', time: '2m', difficulty: 'EASY', icon: PenTool, color: 'text-pink-400', bg: 'bg-pink-400/10', border: 'border-pink-400/30' },
-  { id: 'crossword', title: 'Crossword', description: 'Casual general knowledge crossword.', time: '3m', difficulty: 'MEDIUM', icon: LayoutDashboard, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/30' },
-];
+import type { Game } from '../../shared/types';
+// Fallback local UI info mapped to game slug
+const gameInfoMap: Record<string, any> = {
+  'reaction': { time: '30s', difficulty: 'EASY', icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/30' },
+  'memory': { time: '1m', difficulty: 'MEDIUM', icon: Brain, color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/30' },
+  'ai-or-human': { time: '45s', difficulty: 'MEDIUM', icon: User, color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/30' },
+  'spot-difference': { time: '1m', difficulty: 'HARD', icon: Crosshair, color: 'text-red-400', bg: 'bg-red-400/10', border: 'border-red-400/30' },
+  'doodle': { time: '2m', difficulty: 'EASY', icon: PenTool, color: 'text-pink-400', bg: 'bg-pink-400/10', border: 'border-pink-400/30' },
+  'what-changed': { time: '45s', difficulty: 'MEDIUM', icon: Crosshair, color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/30' },
+  'crossword': { time: '3m', difficulty: 'MEDIUM', icon: LayoutDashboard, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/30' },
+  'tic-tac-toe': { time: '2m', difficulty: 'EASY', icon: LayoutDashboard, color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/30' }
+};
 
 export default function App() {
   const [view, setView] = useState<'attract' | 'registration' | 'selection' | 'game'>('attract');
@@ -19,7 +23,27 @@ export default function App() {
   const [playerId, setPlayerId] = useState<string | null>(localStorage.getItem('paperlab_player_id'));
   const [nicknameInput, setNicknameInput] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [games, setGames] = React.useState<Game[]>([]);
 
+  React.useEffect(() => {
+    fetchGames();
+    
+    const channel = supabase
+      .channel('public:games')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, () => {
+        fetchGames();
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const fetchGames = async () => {
+    const { data } = await supabase.from('games').select('*').order('display_order');
+    if (data) setGames(data as Game[]);
+  };
   const handlePlayNow = () => {
     if (playerId) {
       setView('selection');
@@ -44,9 +68,13 @@ export default function App() {
         setPlayerId(data.id);
         localStorage.setItem('paperlab_player_id', data.id);
         setView('selection');
+      } else if (error) {
+        console.error("Supabase Error:", error);
+        alert(`Database Error: ${error.message || JSON.stringify(error)}`);
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error("Network/Unknown Error:", err);
+      alert(`Error: ${err.message || 'Unknown error'}`);
     } finally {
       setIsRegistering(false);
     }
@@ -184,8 +212,9 @@ export default function App() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8 max-w-7xl mx-auto w-full">
               {games.map((game, index) => {
-                const Icon = game.icon;
-                const isAvailable = ['reaction', 'memory', 'tic-tac-toe', 'ai-or-human', 'spot-difference', 'doodle', 'crossword'].includes(game.id);
+                const info = gameInfoMap[game.slug] || gameInfoMap['reaction'];
+                const Icon = info.icon || Play;
+                const isAvailable = game.enabled;
                 return (
                   <motion.div 
                     initial={{ opacity: 0, x: -20 }}
@@ -193,7 +222,7 @@ export default function App() {
                     transition={{ delay: index * 0.1 }}
                     key={game.id} 
                     className={`relative overflow-hidden group transition-all duration-300 ${isAvailable ? 'cursor-pointer hover:scale-[1.02]' : 'cursor-not-allowed opacity-50 grayscale'}`}
-                    onClick={() => isAvailable && startGame(game.id)}
+                    onClick={() => isAvailable && startGame(game.slug)}
                   >
                     {/* Brutalist Card Background */}
                     <div className="absolute inset-0 bg-zinc-900 border-l-4 border-zinc-800 transition-colors group-hover:border-lime-400" />
@@ -209,11 +238,11 @@ export default function App() {
                         </div>
                         
                         <div>
-                          <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter mb-1 group-hover:text-white transition-colors">{game.title}</h3>
+                          <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter mb-1 group-hover:text-white transition-colors">{game.name}</h3>
                           <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-zinc-500">
-                             <span className="flex items-center gap-1 text-cyan-400"><Icon size={14} /> {game.difficulty}</span>
+                             <span className="flex items-center gap-1 text-cyan-400"><Icon size={14} /> {info.difficulty}</span>
                              <span>|</span>
-                             <span>{game.time}</span>
+                             <span>{info.time}</span>
                           </div>
                         </div>
                       </div>

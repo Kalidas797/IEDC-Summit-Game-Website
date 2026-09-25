@@ -27,6 +27,9 @@ export default function App() {
           fetchLeaderboard();
           fetchMetrics();
         })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, () => {
+          fetchGames();
+        })
         .subscribe();
 
       return () => {
