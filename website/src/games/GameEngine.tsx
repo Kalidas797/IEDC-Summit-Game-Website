@@ -9,6 +9,7 @@ import AIOrHumanGame from './AIOrHumanGame';
 import SpotDifferenceGame from './SpotDifferenceGame';
 import DoodleGame from './DoodleGame';
 import CrosswordGame from './CrosswordGame';
+import WhatChangedGame from './WhatChangedGame';
 
 interface GameEngineProps {
   gameId: string;
@@ -157,8 +158,11 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
             {gameId === 'crossword' && (
                <CrosswordGame onComplete={finishGame} onExit={onExit} />
             )}
+            {gameId === 'what-changed' && (
+               <WhatChangedGame onComplete={finishGame} onExit={onExit} />
+            )}
             {/* Fallback for unimplemented games */}
-            {gameId !== 'reaction' && gameId !== 'memory' && gameId !== 'tic-tac-toe' && gameId !== 'ai-or-human' && gameId !== 'spot-difference' && gameId !== 'doodle' && gameId !== 'crossword' && (
+            {gameId !== 'reaction' && gameId !== 'memory' && gameId !== 'tic-tac-toe' && gameId !== 'ai-or-human' && gameId !== 'spot-difference' && gameId !== 'doodle' && gameId !== 'crossword' && gameId !== 'what-changed' && (
                <div className="flex-1 flex flex-col items-center justify-center">
                  <p className="text-red-400 font-mono uppercase tracking-widest text-xl mb-4">Module Not Found</p>
                  <button onClick={onExit} className="btn-secondary">Return to Hub</button>

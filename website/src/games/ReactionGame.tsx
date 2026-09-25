@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { supabase } from '../supabase';
 
 interface ReactionGameProps {
   onUpdateScore: (score: number) => void;
@@ -13,72 +14,88 @@ export default function ReactionGame({ onUpdateScore, onComplete }: ReactionGame
   const [reactionTime, setReactionTime] = useState<number | null>(null);
   const [round, setRound] = useState(1);
   const [totalScore, setTotalScore] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Admin-configurable settings
+  const [minWait, setMinWait] = useState(2000);
+  const [maxWait, setMaxWait] = useState(6000);
+  const [maxRounds, setMaxRounds] = useState(5);
+  const [falseStartPenalty, setFalseStartPenalty] = useState(true);
   
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startTimeRef = useRef<number>(0);
-  
-  const MAX_ROUNDS = 5;
+
+  // Load settings from Supabase
+  useEffect(() => {
+    async function loadSettings() {
+      const { data: gameData } = await supabase.from('games').select('id').eq('slug', 'reaction').single();
+      if (gameData) {
+        const { data: settings } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'reaction-settings').eq('is_active', true).single();
+        if (settings) {
+          setMinWait(settings.data?.minWait || 2000);
+          setMaxWait(settings.data?.maxWait || 6000);
+          setMaxRounds(settings.data?.rounds || 5);
+          setFalseStartPenalty(settings.data?.falseStartPenalty ?? true);
+        }
+      }
+      setLoading(false);
+    }
+    loadSettings();
+  }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      startRound();
+    }
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [loading]);
 
   const startRound = () => {
     setState('ready');
     setReactionTime(null);
-    
-    // Random wait between 2 to 6 seconds
-    const randomWait = Math.floor(Math.random() * 4000) + 2000;
-    
+    const randomWait = Math.floor(Math.random() * (maxWait - minWait)) + minWait;
     timerRef.current = setTimeout(() => {
       setState('go');
       startTimeRef.current = performance.now();
     }, randomWait);
   };
 
-  useEffect(() => {
-    // Start first round automatically
-    startRound();
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
   const handleClick = () => {
     if (state === 'ready') {
-      // Clicked too early!
       if (timerRef.current) clearTimeout(timerRef.current);
       setState('too-early');
-      setTimeout(() => {
-        startRound();
-      }, 2000);
+      if (falseStartPenalty) {
+        setTimeout(() => startRound(), 2000);
+      }
     } else if (state === 'go') {
-      // Success! Calculate time.
       const timeMs = performance.now() - startTimeRef.current;
       setReactionTime(timeMs);
       setState('success');
-      
-      // Calculate score based on speed (1000 base, minus time in ms. Minimum 100)
       const roundScore = Math.max(100, Math.floor(1000 - timeMs));
       const newTotal = totalScore + roundScore;
       setTotalScore(newTotal);
       onUpdateScore(newTotal);
-
       setTimeout(() => {
-        if (round < MAX_ROUNDS) {
+        if (round < maxRounds) {
           setRound(round + 1);
           startRound();
         } else {
-          onComplete(newTotal, 0); // End of game
+          onComplete(newTotal, 0);
         }
       }, 2000);
     }
   };
 
+  if (loading) return <div className="flex-1 flex items-center justify-center font-mono animate-pulse uppercase text-cyan-400 tracking-widest">Loading Config...</div>;
+
   return (
     <div 
       className="flex-1 flex flex-col items-center justify-center cursor-pointer w-full"
       onClick={handleClick}
-      onMouseDown={(e) => e.preventDefault()} // Prevent text selection
+      onMouseDown={(e) => e.preventDefault()}
     >
       <div className="absolute top-24 text-zinc-500 font-mono tracking-widest uppercase">
-        Round {round} / {MAX_ROUNDS}
+        Round {round} / {maxRounds}
       </div>
 
       <motion.div 

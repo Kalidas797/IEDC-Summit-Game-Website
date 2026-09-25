@@ -216,7 +216,6 @@ export default function App() {
               {games.filter(g => g.enabled).map((game, index) => {
                 const info = gameInfoMap[game.slug] || gameInfoMap['reaction'];
                 const Icon = info.icon || Play;
-                const isAvailable = true; // since we filtered them
                 return (
                   <motion.div 
                     initial={{ opacity: 0, x: -20 }}

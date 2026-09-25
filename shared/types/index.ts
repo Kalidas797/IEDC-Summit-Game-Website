@@ -67,3 +67,104 @@ export interface EventSettings {
   qr_code_url: string;
   updated_at: string;
 }
+
+// =============================================
+// GAME-SPECIFIC CONTENT DATA SHAPES
+// These define what goes inside GameContent.data
+// =============================================
+
+/** Remember the Paper — data shape */
+export interface MemoryContentData {
+  displayDuration: number; // ms to show paper
+  questionTime: number;    // ms per question
+  questions: MCQuestion[];
+}
+
+export interface MCQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: number; // index into options
+}
+
+/** AI or Human — data shape */
+export interface AIOrHumanContentData {
+  contentType: 'image' | 'text';
+  correctAnswer: 'AI' | 'HUMAN';
+  explanation: string;
+}
+
+/** Spot the Difference / What Changed — data shape */
+export interface DifferenceContentData {
+  originalImagePath: string;   // Supabase storage path
+  modifiedImagePath: string;   // Supabase storage path
+  timeLimit: number;           // seconds
+  regions: DifferenceRegion[];
+  // What Changed specific
+  memoryTime?: number;         // seconds to study original
+}
+
+export interface DifferenceRegion {
+  id: string;
+  x: number;      // normalized 0-1
+  y: number;      // normalized 0-1
+  width: number;  // normalized 0-1
+  height: number; // normalized 0-1
+  label: string;
+}
+
+/** Doodle Telephone — data shape */
+export interface DoodleContentData {
+  prompt: string;
+  category: string;
+  drawingTime: number;  // seconds
+  rounds: number;       // how many draw/guess rounds
+}
+
+/** Crossword — data shape */
+export interface CrosswordContentData {
+  words: CrosswordWord[];
+  timeLimit: number; // seconds
+  grid: CrosswordCell[][] | null; // generated grid
+  gridSize: number;
+}
+
+export interface CrosswordWord {
+  word: string;
+  clue: string;
+  direction?: 'across' | 'down';
+  startRow?: number;
+  startCol?: number;
+}
+
+export interface CrosswordCell {
+  letter: string | null; // null = black cell
+  number: number | null; // clue number if start of word
+  isBlack: boolean;
+}
+
+/** Reaction Challenge — data shape (stored in game_content) */
+export interface ReactionContentData {
+  minWait: number;      // ms minimum wait
+  maxWait: number;      // ms maximum wait
+  rounds: number;       // number of rounds
+  falseStartPenalty: boolean;
+  scoring: 'speed' | 'accuracy';
+}
+
+/** Tic-Tac-Toe — data shape (stored in game_content) */
+export interface TicTacToeContentData {
+  mode: 'pvp' | 'pvc';
+  difficulty: 'easy' | 'medium' | 'hard';
+  defaultMode: 'pvp' | 'pvc';
+}
+
+// Game slug union for type safety
+export type GameSlug = 
+  | 'memory'
+  | 'ai-or-human'
+  | 'spot-difference'
+  | 'what-changed'
+  | 'doodle'
+  | 'crossword'
+  | 'reaction'
+  | 'tic-tac-toe';
