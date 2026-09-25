@@ -18,6 +18,7 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
+  const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(null);
   
   const startTimeRef = useRef<number>(0);
   
@@ -78,7 +79,10 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
   }, [memoryTimeLeft, state]);
 
   const handleAnswer = (selectedIndex: number) => {
-    if (!content) return;
+    if (!content || selectedAnswerIndex !== null) return;
+    
+    setSelectedAnswerIndex(selectedIndex);
+    
     const questions = content.data.questions;
     const currentQ = questions[currentQuestionIndex];
     
@@ -93,12 +97,15 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
       onUpdateScore(newScore);
     }
     
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      const totalTime = performance.now() - startTimeRef.current;
-      onComplete(newScore, totalTime);
-    }
+    setTimeout(() => {
+      setSelectedAnswerIndex(null);
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex(prev => prev + 1);
+      } else {
+        const totalTime = performance.now() - startTimeRef.current;
+        onComplete(newScore, totalTime);
+      }
+    }, 1500);
   };
 
   if (state === 'loading') {
@@ -161,16 +168,37 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
-              {content.data.questions[currentQuestionIndex].options.map((opt: string, i: number) => (
-                <button 
-                  key={i}
-                  onClick={() => handleAnswer(i)}
-                  className="bg-zinc-900 border-2 border-zinc-800 hover:border-cyan-400 hover:bg-zinc-800 text-left p-6 font-bold text-xl uppercase tracking-wider transition-all"
-                >
-                  <span className="text-zinc-500 mr-4 font-mono">{String.fromCharCode(65 + i)}</span>
-                  {opt}
-                </button>
-              ))}
+              {content.data.questions[currentQuestionIndex].options.map((opt: string, i: number) => {
+                const isSelected = selectedAnswerIndex === i;
+                const isCorrect = i === content.data.questions[currentQuestionIndex].correctAnswer;
+                const showFeedback = selectedAnswerIndex !== null;
+                
+                let btnClass = "bg-zinc-900 border-2 border-zinc-800 text-zinc-100 hover:border-cyan-400 hover:bg-zinc-800";
+                
+                if (showFeedback) {
+                  if (isCorrect) {
+                    btnClass = "bg-lime-400 border-lime-400 text-zinc-950";
+                  } else if (isSelected && !isCorrect) {
+                    btnClass = "bg-red-500 border-red-500 text-white";
+                  } else {
+                    btnClass = "bg-zinc-900 border-2 border-zinc-800 text-zinc-500 opacity-50";
+                  }
+                }
+
+                return (
+                  <button 
+                    key={i}
+                    onClick={() => handleAnswer(i)}
+                    disabled={showFeedback}
+                    className={`text-left p-6 font-bold text-xl uppercase tracking-wider transition-all ${btnClass}`}
+                  >
+                    <span className={`mr-4 font-mono ${showFeedback && isCorrect ? 'text-zinc-800' : showFeedback && isSelected ? 'text-zinc-200' : 'text-zinc-500'}`}>
+                      {String.fromCharCode(65 + i)}
+                    </span>
+                    {opt}
+                  </button>
+                );
+              })}
             </div>
           </motion.div>
         )}

@@ -25,9 +25,9 @@ export default function CrosswordGame({ onComplete, onExit: _onExit }: Crossword
   useEffect(() => {
     async function load() {
       const { data: gameData } = await supabase.from('games').select('id').eq('slug', 'crossword').single();
-      if (!gameData) return setError(true);
+      if (!gameData) { setError(true); setLoading(false); return; }
       const { data: contentData } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('is_active', true);
-      if (!contentData || contentData.length === 0) return setError(true);
+      if (!contentData || contentData.length === 0) { setError(true); setLoading(false); return; }
       const chosen = contentData[Math.floor(Math.random() * contentData.length)];
       setContent(chosen);
       setTimeLeft(chosen.data?.timeLimit || 180);

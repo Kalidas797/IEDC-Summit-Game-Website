@@ -7,7 +7,26 @@ import ContentEditor from './ContentEditor';
 
 export default function App() {
   const [session, setSession] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'modules' | 'content' | 'players'>('dashboard');
+  const [activeTab, setActiveTabInternal] = useState<'dashboard' | 'modules' | 'content' | 'players'>('dashboard');
+  
+  const setActiveTab = (tab: typeof activeTab) => {
+    window.history.pushState({ tab }, '', `#${tab}`);
+    setActiveTabInternal(tab);
+  };
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.tab) {
+        setActiveTabInternal(event.state.tab);
+      } else {
+        setActiveTabInternal('dashboard');
+      }
+    };
+    
+    window.history.replaceState({ tab: 'dashboard' }, '', '#dashboard');
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [games, setGames] = useState<Game[]>([]);
   

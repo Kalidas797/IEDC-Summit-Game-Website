@@ -19,11 +19,31 @@ const gameInfoMap: Record<string, any> = {
 };
 
 export default function App() {
-  const [view, setView] = useState<'attract' | 'registration' | 'selection' | 'game'>('attract');
+  const [view, setViewInternal] = useState<'attract' | 'registration' | 'selection' | 'game'>('attract');
+  
+  const setView = (newView: typeof view) => {
+    window.history.pushState({ view: newView }, '', `#${newView}`);
+    setViewInternal(newView);
+  };
+
+  React.useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.view) {
+        setViewInternal(event.state.view);
+      } else {
+        setViewInternal('attract');
+      }
+    };
+    
+    window.history.replaceState({ view: 'attract' }, '', '#attract');
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<string | null>(localStorage.getItem('paperlab_player_id'));
   const [nicknameInput, setNicknameInput] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
+  const [pendingRandomGame, setPendingRandomGame] = useState(false);
   const [games, setGames] = React.useState<Game[]>([]);
 
   React.useEffect(() => {
@@ -46,9 +66,26 @@ export default function App() {
     if (data) setGames(data as Game[]);
   };
   const handlePlayNow = () => {
+    setPendingRandomGame(false);
     if (playerId) {
       setView('selection');
     } else {
+      setView('registration');
+    }
+  };
+
+  const handleRandomGame = () => {
+    const enabledGames = games.filter(g => g.enabled);
+    if (enabledGames.length === 0) {
+      alert("No games are currently available.");
+      return;
+    }
+    
+    if (playerId) {
+      const randomGame = enabledGames[Math.floor(Math.random() * enabledGames.length)];
+      startGame(randomGame.slug);
+    } else {
+      setPendingRandomGame(true);
       setView('registration');
     }
   };
@@ -68,7 +105,19 @@ export default function App() {
       if (data) {
         setPlayerId(data.id);
         localStorage.setItem('paperlab_player_id', data.id);
-        setView('selection');
+        
+        if (pendingRandomGame) {
+          const enabledGames = games.filter(g => g.enabled);
+          if (enabledGames.length > 0) {
+            const randomGame = enabledGames[Math.floor(Math.random() * enabledGames.length)];
+            startGame(randomGame.slug);
+          } else {
+            setView('selection');
+          }
+          setPendingRandomGame(false);
+        } else {
+          setView('selection');
+        }
       } else if (error) {
         console.error("Supabase Error:", error);
         alert(`Database Error: ${error.message || JSON.stringify(error)}`);
@@ -136,7 +185,10 @@ export default function App() {
               >
                 <Play size={28} fill="currentColor" /> Play Now
               </button>
-              <button className="bg-zinc-900 border-2 border-zinc-800 hover:border-cyan-400 hover:text-cyan-400 text-zinc-300 font-bold uppercase tracking-widest text-xl px-12 py-6 flex items-center gap-3 transition-all hover:scale-105 active:scale-95">
+              <button 
+                onClick={handleRandomGame}
+                className="bg-zinc-900 border-2 border-zinc-800 hover:border-cyan-400 hover:text-cyan-400 text-zinc-300 font-bold uppercase tracking-widest text-xl px-12 py-6 flex items-center gap-3 transition-all hover:scale-105 active:scale-95"
+              >
                 <Sparkles size={28} /> Random Game
               </button>
             </motion.div>
