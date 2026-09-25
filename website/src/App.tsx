@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Play, Sparkles, User, Trophy, Crosshair, Zap, Brain, PenTool, LayoutDashboard, ArrowRight } from 'lucide-react';
+import { Play, Sparkles, User, Crosshair, Zap, Brain, PenTool, LayoutDashboard, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GameEngine from './games/GameEngine';
 import { supabase } from './supabase';
 
 import type { Game } from '../../shared/types';
 // Fallback local UI info mapped to game slug
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const gameInfoMap: Record<string, any> = {
   'reaction': { time: '30s', difficulty: 'EASY', icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/30' },
   'memory': { time: '1m', difficulty: 'MEDIUM', icon: Brain, color: 'text-purple-400', bg: 'bg-purple-400/10', border: 'border-purple-400/30' },
@@ -72,6 +73,7 @@ export default function App() {
         console.error("Supabase Error:", error);
         alert(`Database Error: ${error.message || JSON.stringify(error)}`);
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error("Network/Unknown Error:", err);
       alert(`Error: ${err.message || 'Unknown error'}`);

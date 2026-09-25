@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Timer, XCircle } from 'lucide-react';
+import { Trophy, XCircle } from 'lucide-react';
 import ReactionGame from './ReactionGame';
 import MemoryGame from './MemoryGame';
 import TicTacToeGame from './TicTacToeGame';
@@ -34,7 +34,7 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
         startGameSession();
       }
     }
-  }, [countdown, gameState]);
+  }, [countdown, gameState]); // startGameSession intentionally omitted to prevent loop
 
   const startGameSession = async () => {
     let deviceId = localStorage.getItem('paperlab_device_id');

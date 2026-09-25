@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 interface TicTacToeGameProps {
@@ -12,7 +12,6 @@ export default function TicTacToeGame({ onUpdateScore, onComplete }: TicTacToeGa
   const [board, setBoard] = useState<Player[]>(Array(9).fill(null));
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
   const [winner, setWinner] = useState<Player | 'draw' | null>(null);
-  const [score, setScore] = useState(0);
   const [startTime] = useState(performance.now());
 
   const checkWinner = (squares: Player[]) => {
@@ -39,7 +38,6 @@ export default function TicTacToeGame({ onUpdateScore, onComplete }: TicTacToeGa
     if (result === 'X') finalScore = 1000;
     else if (result === 'draw') finalScore = 200;
     
-    setScore(finalScore);
     onUpdateScore(finalScore);
     
     setTimeout(() => {
@@ -82,7 +80,7 @@ export default function TicTacToeGame({ onUpdateScore, onComplete }: TicTacToeGa
       }, 500); // Bot thinks for 500ms
       return () => clearTimeout(timeout);
     }
-  }, [isPlayerTurn, board, winner]);
+  }, [isPlayerTurn, board, winner]); // handleEndGame is intentionally omitted to avoid recreation loops
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-8">
