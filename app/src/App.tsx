@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Lock, LogIn, Activity, Settings, Users, Database, Upload, Plus, Edit, Trash2, Power, Menu, X } from 'lucide-react';
-import { supabase, uploadGameAsset } from './supabase';
+import { useState, useEffect } from 'react';
+import { Lock, LogIn, Activity, Settings, Users, Database, Edit, Trash2, Power, Menu, X } from 'lucide-react';
+import { supabase } from './supabase';
 import type { Game } from '../../shared/types';
+import ContentEditor from './ContentEditor';
 
 export default function App() {
   const [session, setSession] = useState<boolean>(false);
@@ -83,11 +84,7 @@ export default function App() {
     fetchGames();
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const path = await uploadGameAsset(e.target.files[0], 'game-documents');
-    if (path) alert('Asset uploaded to: ' + path);
-  };
+
 
   if (!session) {
     return (
@@ -233,44 +230,7 @@ export default function App() {
         )}
 
         {activeTab === 'content' && (
-          <div className="flex flex-col gap-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold uppercase tracking-wider">Configure: Remember the Paper</h2>
-              <div className="flex gap-4">
-                <button className="btn-primary flex items-center gap-2 px-4 py-2 text-sm">
-                  <Plus size={16} /> NEW CHALLENGE
-                </button>
-              </div>
-            </div>
-            
-            <div className="admin-card bg-gray-900/50 overflow-x-auto">
-              <table className="w-full text-left font-mono text-sm min-w-[600px]">
-                <thead className="text-muted border-b border-gray-800">
-                  <tr>
-                    <th className="pb-4 font-normal">TITLE</th>
-                    <th className="pb-4 font-normal">DIFFICULTY</th>
-                    <th className="pb-4 font-normal">IMAGE PATH</th>
-                    <th className="pb-4 font-normal text-right">ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-gray-800/50 hover:bg-surface transition-colors">
-                    <td className="py-4">AI Crop Detection Paper</td>
-                    <td className="py-4 text-secondary">HARD</td>
-                    <td className="py-4 text-muted text-xs truncate max-w-[200px]">paper_123.webp</td>
-                    <td className="py-4 flex justify-end gap-3 text-muted">
-                      <label className="cursor-pointer hover:text-white" title="Replace Image">
-                        <Upload size={16} />
-                        <input type="file" className="hidden" onChange={handleFileUpload} />
-                      </label>
-                      <button className="hover:text-white" title="Edit JSON"><Edit size={16} /></button>
-                      <button className="hover:text-danger" title="Delete"><Trash2 size={16} /></button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <ContentEditor />
         )}
 
         {activeTab === 'players' && (

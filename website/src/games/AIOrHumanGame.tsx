@@ -54,8 +54,8 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
 
   const handleGuess = (guess: 'AI' | 'HUMAN') => {
     const currentChallenge = challenges[currentIndex];
-    // Expected JSON data: { isAI: true/false }
-    const isCorrect = (guess === 'AI' && currentChallenge.data.isAI) || (guess === 'HUMAN' && !currentChallenge.data.isAI);
+    // Expected JSON data: { correctAnswer: 'AI' | 'HUMAN', explanation: string }
+    const isCorrect = guess === currentChallenge.data.correctAnswer;
     
     if (isCorrect) {
       const newScore = score + 200;
@@ -77,7 +77,7 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
         const totalTime = performance.now() - startTimeRef.current;
         onComplete(score + (isCorrect ? 200 : 0), totalTime); // Ensure final score is passed
       }
-    }, 1500);
+    }, 4000); // Wait longer so they can read the explanation
   };
 
   if (state === 'loading') return <div className="flex-1 flex items-center justify-center font-mono animate-pulse uppercase text-cyan-400">Accessing Database...</div>;
@@ -109,7 +109,7 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
             <div className="flex-1 w-full bg-zinc-900 border-2 border-zinc-800 rounded mb-8 flex items-center justify-center overflow-hidden relative">
               {currentChallenge.storage_path ? (
                 <img 
-                  src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/game-assets/${currentChallenge.storage_path}`} 
+                  src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/game-documents/${currentChallenge.storage_path}`} 
                   className={`max-w-full max-h-[50vh] object-contain transition-all ${state === 'feedback' ? 'blur-sm brightness-50' : ''}`}
                   alt="AI or Human?"
                 />
@@ -119,9 +119,13 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
 
               {/* Feedback Overlay */}
               {state === 'feedback' && (
-                <div className="absolute inset-0 flex items-center justify-center z-10">
-                  <div className={`text-6xl md:text-8xl font-black uppercase tracking-tighter ${feedback === 'correct' ? 'text-lime-400' : 'text-red-500'}`}>
+                <div className="absolute inset-0 flex flex-col items-center justify-center z-10 p-8 text-center bg-zinc-950/80">
+                  <div className={`text-6xl md:text-8xl font-black uppercase tracking-tighter mb-4 ${feedback === 'correct' ? 'text-lime-400' : 'text-red-500'}`}>
                     {feedback === 'correct' ? 'CORRECT' : 'INCORRECT'}
+                  </div>
+                  <div className="text-xl font-mono text-zinc-300 max-w-2xl bg-zinc-900 border border-zinc-800 p-6">
+                    <span className="text-cyan-400 font-bold block mb-2">TRUTH: {currentChallenge.data.correctAnswer}</span>
+                    {currentChallenge.data.explanation}
                   </div>
                 </div>
               )}

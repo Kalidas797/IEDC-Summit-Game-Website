@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Play, Sparkles, User, Trophy, Crosshair, Zap, Brain, PenTool, LayoutDashboard } from 'lucide-react';
+import { Play, Sparkles, User, Trophy, Crosshair, Zap, Brain, PenTool, LayoutDashboard, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GameEngine from './games/GameEngine';
+import { supabase } from './supabase';
 
 const games = [
   { id: 'reaction', title: 'Reaction Challenge', description: 'Test your reflexes. How fast are you?', time: '30s', difficulty: 'EASY', icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/30' },
@@ -13,8 +14,43 @@ const games = [
 ];
 
 export default function App() {
-  const [view, setView] = useState<'attract' | 'selection' | 'game'>('attract');
+  const [view, setView] = useState<'attract' | 'registration' | 'selection' | 'game'>('attract');
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [playerId, setPlayerId] = useState<string | null>(localStorage.getItem('paperlab_player_id'));
+  const [nicknameInput, setNicknameInput] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
+
+  const handlePlayNow = () => {
+    if (playerId) {
+      setView('selection');
+    } else {
+      setView('registration');
+    }
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!nicknameInput.trim()) return;
+    
+    setIsRegistering(true);
+    try {
+      const { data, error } = await supabase
+        .from('players')
+        .insert([{ nickname: nicknameInput.trim() }])
+        .select()
+        .single();
+        
+      if (data) {
+        setPlayerId(data.id);
+        localStorage.setItem('paperlab_player_id', data.id);
+        setView('selection');
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsRegistering(false);
+    }
+  };
 
   const startGame = (id: string) => {
     setSelectedGameId(id);
@@ -23,7 +59,7 @@ export default function App() {
 
   const handleGameComplete = (score: number, timeMs: number) => {
     console.log('Game completed:', { score, timeMs });
-    // Future: Submit to Supabase here
+    // Handled by GameEngine now
     setView('selection');
   };
 
@@ -65,7 +101,7 @@ export default function App() {
               className="flex flex-col md:flex-row gap-6 mb-16"
             >
               <button 
-                onClick={() => setView('selection')}
+                onClick={handlePlayNow}
                 className="bg-lime-400 hover:bg-lime-300 text-zinc-950 font-black uppercase tracking-widest text-xl px-12 py-6 flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(163,230,53,0.3)]"
               >
                 <Play size={28} fill="currentColor" /> Play Now
@@ -78,6 +114,48 @@ export default function App() {
             <div className="absolute bottom-8 left-8 text-left font-mono text-zinc-500 text-xs md:text-sm border-l-2 border-lime-400 pl-4 tracking-wider uppercase">
               <p className="mb-1 text-zinc-400">STATION: #PL-892</p>
               <p className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" /> SYSTEM ONLINE</p>
+            </div>
+          </motion.div>
+        )}
+
+        {view === 'registration' && (
+          <motion.div 
+            key="registration"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="flex-1 flex flex-col items-center justify-center p-8 z-10"
+          >
+            <div className="w-full max-w-md">
+              <h2 className="text-4xl font-black uppercase mb-2">Identify Yourself</h2>
+              <p className="text-zinc-400 font-mono mb-8 uppercase text-sm tracking-widest">Enter a nickname for the leaderboard</p>
+              
+              <form onSubmit={handleRegister} className="flex flex-col gap-4">
+                <input 
+                  type="text" 
+                  value={nicknameInput}
+                  onChange={(e) => setNicknameInput(e.target.value.toUpperCase())}
+                  placeholder="NICKNAME"
+                  maxLength={15}
+                  required
+                  className="bg-zinc-900 border-2 border-zinc-800 focus:border-lime-400 focus:outline-none p-6 text-3xl font-black uppercase text-center tracking-widest transition-colors w-full"
+                />
+                
+                <button 
+                  type="submit" 
+                  disabled={isRegistering || !nicknameInput.trim()}
+                  className="bg-lime-400 hover:bg-lime-300 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 font-black uppercase tracking-widest text-xl px-12 py-6 flex justify-center items-center gap-3 transition-colors w-full"
+                >
+                  {isRegistering ? 'CONNECTING...' : 'INITIALIZE'} <ArrowRight size={24} />
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setView('attract')}
+                  className="mt-4 text-zinc-500 hover:text-white font-mono uppercase tracking-widest text-sm"
+                >
+                  [ CANCEL ]
+                </button>
+              </form>
             </div>
           </motion.div>
         )}
@@ -159,10 +237,11 @@ export default function App() {
             </div>
           </motion.div>
         )}
-        {view === 'game' && selectedGameId && (
+        {view === 'game' && selectedGameId && playerId && (
           <GameEngine 
             key="game-engine"
             gameId={selectedGameId} 
+            playerId={playerId}
             onExit={() => setView('selection')}
             onGameComplete={handleGameComplete}
           />

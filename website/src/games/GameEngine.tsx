@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Timer, XCircle } from 'lucide-react';
 import ReactionGame from './ReactionGame';
@@ -11,14 +12,17 @@ import CrosswordGame from './CrosswordGame';
 
 interface GameEngineProps {
   gameId: string;
+  playerId: string;
   onExit: () => void;
   onGameComplete: (score: number, timeMs: number) => void;
 }
 
-export default function GameEngine({ gameId, onExit, onGameComplete }: GameEngineProps) {
+export default function GameEngine({ gameId, playerId, onExit, onGameComplete }: GameEngineProps) {
   const [gameState, setGameState] = useState<'intro' | 'playing' | 'gameover'>('intro');
   const [countdown, setCountdown] = useState(3);
   const [score, setScore] = useState(0);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [dbGameId, setDbGameId] = useState<string | null>(null);
 
   // Unified Countdown logic for Intro state
   useEffect(() => {
@@ -27,19 +31,63 @@ export default function GameEngine({ gameId, onExit, onGameComplete }: GameEngin
         const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
         return () => clearTimeout(timer);
       } else {
-        setGameState('playing');
+        startGameSession();
       }
     }
   }, [countdown, gameState]);
+
+  const startGameSession = async () => {
+    let deviceId = localStorage.getItem('paperlab_device_id');
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+      localStorage.setItem('paperlab_device_id', deviceId);
+    }
+    
+    const { data: gameData } = await supabase.from('games').select('id').eq('slug', gameId).single();
+    if (!gameData) {
+      console.error("Game not found in database:", gameId);
+      setGameState('playing');
+      return;
+    }
+    setDbGameId(gameData.id);
+
+    const { data: sessionData, error } = await supabase.from('game_sessions').insert([{
+      player_id: playerId,
+      game_id: gameData.id,
+      device_id: deviceId,
+      status: 'playing'
+    }]).select().single();
+
+    if (error) console.error("Error creating session:", error);
+    if (sessionData) setSessionId(sessionData.id);
+    
+    setGameState('playing');
+  };
 
   const handleScoreUpdate = (newScore: number) => {
     setScore(newScore);
   };
 
-  const finishGame = (finalScore: number, finalTimeMs: number) => {
+  const finishGame = async (finalScore: number, finalTimeMs: number) => {
     setScore(finalScore);
     setGameState('gameover');
-    // Allow seeing the gameover screen for a moment before pushing data
+    
+    if (sessionId && dbGameId) {
+      await supabase.from('game_sessions').update({
+        completed_at: new Date().toISOString(),
+        status: 'completed'
+      }).eq('id', sessionId);
+
+      const { error } = await supabase.from('scores').insert([{
+        player_id: playerId,
+        game_id: dbGameId,
+        session_id: sessionId,
+        score: finalScore,
+        time_ms: finalTimeMs
+      }]);
+      if (error) console.error("Error saving score:", error);
+    }
+
     setTimeout(() => {
       onGameComplete(finalScore, finalTimeMs);
     }, 3000);
