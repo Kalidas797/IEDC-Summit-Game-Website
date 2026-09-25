@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabase';
-import { Edit, Trash2, Upload, Box, Check, X } from 'lucide-react';
+import { Edit, Trash2, Upload, Box } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ContentEditor() {
