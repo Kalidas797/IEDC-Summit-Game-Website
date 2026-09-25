@@ -94,7 +94,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-lime-400 selection:text-black overflow-hidden relative flex flex-col">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-lime-400 selection:text-black overflow-x-hidden relative flex flex-col">
       {/* Background Noise/Grid for Arcade Feel */}
       <div className="absolute inset-0 z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #18181b 1px, transparent 1px)', backgroundSize: '24px 24px', opacity: 0.4 }} />
 
@@ -116,7 +116,7 @@ export default function App() {
               <h2 className="text-lime-400 tracking-[0.3em] text-sm md:text-xl mb-6 font-mono font-bold uppercase">
                 // PaperLab Games Arena
               </h2>
-              <h1 className="text-6xl md:text-8xl lg:text-9xl font-black mb-12 uppercase leading-[0.9] tracking-tighter">
+              <h1 className="text-5xl md:text-8xl lg:text-9xl font-black mb-12 uppercase leading-[0.9] tracking-tighter">
                 Can you beat<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-lime-400 to-cyan-400">
                   the leaderboard?
@@ -197,7 +197,7 @@ export default function App() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="flex-1 p-8 md:p-12 lg:p-16 z-10 flex flex-col"
+            className="flex-1 p-4 md:p-12 lg:p-16 z-10 flex flex-col"
           >
             <header className="flex justify-between items-end mb-12 border-b-2 border-zinc-800 pb-6">
               <div>
@@ -234,12 +234,12 @@ export default function App() {
                     <div className="relative p-6 md:p-8 flex items-center justify-between z-10">
                       <div className="flex items-center gap-6">
                         {/* Huge Index Number */}
-                        <div className="text-4xl md:text-6xl font-black text-zinc-800 group-hover:text-lime-400 transition-colors w-16 text-center">
+                        <div className="text-3xl md:text-6xl font-black text-zinc-800 group-hover:text-lime-400 transition-colors w-12 md:w-16 text-center">
                           0{index + 1}
                         </div>
                         
                         <div>
-                          <h3 className="text-2xl md:text-3xl font-black uppercase tracking-tighter mb-1 group-hover:text-white transition-colors">{game.name}</h3>
+                          <h3 className="text-xl md:text-3xl font-black uppercase tracking-tighter mb-1 group-hover:text-white transition-colors">{game.name}</h3>
                           <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-zinc-500">
                              <span className="flex items-center gap-1 text-cyan-400"><Icon size={14} /> {info.difficulty}</span>
                              <span>|</span>

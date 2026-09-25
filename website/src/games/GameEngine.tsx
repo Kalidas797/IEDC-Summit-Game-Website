@@ -178,7 +178,7 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
             animate={{ opacity: 1, y: 0 }}
             className="flex-1 flex flex-col items-center justify-center z-10 bg-zinc-950/80 backdrop-blur-sm"
           >
-            <h1 className="text-6xl md:text-8xl font-black uppercase text-lime-400 tracking-tighter mb-4">
+            <h1 className="text-4xl md:text-8xl font-black uppercase text-lime-400 tracking-tighter mb-4 text-center">
               Module Cleared
             </h1>
             <p className="text-2xl font-mono text-zinc-400 mb-8 uppercase tracking-widest">

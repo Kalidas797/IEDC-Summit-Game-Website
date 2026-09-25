@@ -131,7 +131,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background text-text overflow-x-hidden relative">
+    <div className="h-screen w-full flex flex-col md:flex-row bg-background text-text overflow-hidden relative">
       
       {/* Mobile Top Bar */}
       <div className="md:hidden flex items-center justify-between p-4 border-b border-gray-800 bg-surface z-40">
@@ -185,7 +185,7 @@ export default function App() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 p-4 md:p-12 overflow-y-auto w-full">
+      <div className="flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto w-full relative z-0">
         <header className="mb-8 md:mb-12 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-xl md:text-3xl font-bold uppercase tracking-widest mb-1 md:mb-2">
@@ -262,7 +262,7 @@ export default function App() {
               </button>
             </div>
             
-            <div className="admin-card bg-gray-900/50 overflow-x-auto">
+            <div className="admin-card bg-gray-900/50 overflow-x-auto w-full max-w-full">
               <table className="w-full text-left font-mono text-sm min-w-[600px]">
                 <thead className="text-muted border-b border-gray-800">
                   <tr>
