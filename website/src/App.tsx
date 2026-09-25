@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { Play, Sparkles, User, Crosshair, Zap, Brain, PenTool, LayoutDashboard, ArrowRight } from 'lucide-react';
+import { Play, Sparkles, User, Crosshair, Zap, Brain, PenTool, LayoutDashboard, ArrowRight, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GameEngine from './games/GameEngine';
 import { supabase } from './supabase';
+import LeaderboardView from './LeaderboardView';
+
+type ViewState = 'attract' | 'registration' | 'selection' | 'game' | 'leaderboard';
 
 import type { Game } from '../../shared/types';
 // Fallback local UI info mapped to game slug
@@ -19,7 +22,7 @@ const gameInfoMap: Record<string, any> = {
 };
 
 export default function App() {
-  const [view, setViewInternal] = useState<'attract' | 'registration' | 'selection' | 'game'>('attract');
+  const [view, setViewInternal] = useState<ViewState>('attract');
   
   const setView = (newView: typeof view) => {
     window.history.pushState({ view: newView }, '', `#${newView}`);
@@ -191,6 +194,12 @@ export default function App() {
               >
                 <Sparkles size={28} /> Random Game
               </button>
+              <button 
+                onClick={() => setView('leaderboard')}
+                className="bg-zinc-900 border-2 border-zinc-800 hover:border-lime-400 hover:text-lime-400 text-zinc-300 font-bold uppercase tracking-widest text-xl px-12 py-6 flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95 md:col-span-2"
+              >
+                <Trophy size={28} /> Leaderboard
+              </button>
             </motion.div>
 
             <div className="absolute bottom-8 left-8 text-left font-mono text-zinc-500 text-xs md:text-sm border-l-2 border-lime-400 pl-4 tracking-wider uppercase">
@@ -321,6 +330,9 @@ export default function App() {
             onExit={() => setView('selection')}
             onGameComplete={handleGameComplete}
           />
+        )}
+        {view === 'leaderboard' && (
+          <LeaderboardView games={games} onBack={() => setView('attract')} />
         )}
       </AnimatePresence>
     </div>
