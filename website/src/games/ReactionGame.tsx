@@ -90,9 +90,10 @@ export default function ReactionGame({ onUpdateScore, onComplete }: ReactionGame
 
   return (
     <div 
-      className="flex-1 flex flex-col items-center justify-center cursor-pointer w-full"
+      className="flex-1 flex flex-col items-center justify-center cursor-pointer w-full touch-none select-none"
       onClick={handleClick}
       onMouseDown={(e) => e.preventDefault()}
+      onTouchStart={(e) => { e.preventDefault(); handleClick(); }}
     >
       <div className="absolute top-24 text-zinc-500 font-mono tracking-widest uppercase">
         Round {round} / {maxRounds}

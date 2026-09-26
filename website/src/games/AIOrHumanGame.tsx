@@ -131,18 +131,18 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
               )}
             </div>
 
-            <div className="flex gap-6 w-full max-w-2xl">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full max-w-2xl">
               <button 
                 onClick={() => handleGuess('AI')}
                 disabled={state === 'feedback'}
-                className="flex-1 bg-zinc-900 border-2 border-zinc-800 hover:border-cyan-400 text-cyan-400 py-6 text-2xl font-black uppercase tracking-widest disabled:opacity-50"
+                className="flex-1 bg-zinc-900 border-2 border-zinc-800 hover:border-cyan-400 text-cyan-400 py-4 md:py-6 text-xl md:text-2xl font-black uppercase tracking-widest disabled:opacity-50"
               >
                 AI GENERATED
               </button>
               <button 
                 onClick={() => handleGuess('HUMAN')}
                 disabled={state === 'feedback'}
-                className="flex-1 bg-zinc-900 border-2 border-zinc-800 hover:border-lime-400 text-lime-400 py-6 text-2xl font-black uppercase tracking-widest disabled:opacity-50"
+                className="flex-1 bg-zinc-900 border-2 border-zinc-800 hover:border-lime-400 text-lime-400 py-4 md:py-6 text-xl md:text-2xl font-black uppercase tracking-widest disabled:opacity-50"
               >
                 HUMAN CREATED
               </button>

@@ -7,7 +7,7 @@ export default function TermsView({ onBack }: { onBack: () => void }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="flex-1 flex flex-col p-8 z-10 w-full max-w-4xl mx-auto"
+      className="flex-1 flex flex-col p-4 md:p-8 z-10 w-full max-w-4xl mx-auto"
     >
       <button 
         onClick={onBack}
@@ -16,7 +16,7 @@ export default function TermsView({ onBack }: { onBack: () => void }) {
         <ChevronLeft size={20} /> Back to Arena
       </button>
 
-      <div className="bg-zinc-900 border-2 border-zinc-800 p-8 md:p-12 text-zinc-300 font-mono text-sm md:text-base overflow-y-auto" style={{ maxHeight: 'calc(100vh - 150px)' }}>
+      <div className="bg-zinc-900 border-2 border-zinc-800 p-4 sm:p-8 md:p-12 text-zinc-300 font-mono text-sm md:text-base overflow-y-auto" style={{ maxHeight: 'calc(100dvh - 150px)' }}>
         <h1 className="text-3xl md:text-5xl font-black uppercase text-cyan-400 mb-8 tracking-tighter">Terms & Conditions</h1>
         
         <div className="space-y-6 leading-relaxed">

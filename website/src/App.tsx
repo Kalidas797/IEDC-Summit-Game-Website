@@ -268,9 +268,9 @@ export default function App() {
               <h2 className="text-lime-400 tracking-[0.3em] text-sm md:text-xl mb-6 font-mono font-bold uppercase">
                 // PaperLab Games Arena
               </h2>
-              <h1 className="text-5xl md:text-8xl lg:text-9xl font-black mb-12 uppercase leading-[0.9] tracking-tighter">
+              <h1 className="text-[clamp(2.5rem,10vw,8rem)] md:text-8xl lg:text-9xl font-black mb-12 uppercase leading-[0.9] tracking-tighter">
                 Can you beat<br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-lime-400 to-cyan-400">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-lime-400 to-cyan-400 break-words">
                   the leaderboard?
                 </span>
               </h1>
@@ -302,7 +302,7 @@ export default function App() {
               </button>
             </motion.div>
 
-            <div className="absolute bottom-8 left-8 text-left font-mono text-zinc-500 text-xs md:text-sm border-l-2 border-lime-400 pl-4 tracking-wider uppercase">
+            <div className="hidden md:block absolute bottom-8 left-8 text-left font-mono text-zinc-500 text-xs md:text-sm border-l-2 border-lime-400 pl-4 tracking-wider uppercase">
               <p className="mb-1 text-zinc-400">STATION: #PL-892</p>
               <p className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" /> SYSTEM ONLINE</p>
             </div>
@@ -407,9 +407,9 @@ export default function App() {
             transition={{ duration: 0.4, ease: "easeOut" }}
             className="flex-1 p-4 md:p-12 lg:p-16 z-10 flex flex-col"
           >
-            <header className="flex justify-between items-end mb-12 border-b-2 border-zinc-800 pb-6">
-              <div>
-                <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-2">Choose Challenge</h1>
+            <header className="flex flex-col md:flex-row md:items-end justify-between mb-8 md:mb-12 border-b-2 border-zinc-800 pb-6 w-full">
+              <div className="mb-4 md:mb-0">
+                <h1 className="text-3xl sm:text-4xl md:text-6xl font-black uppercase tracking-tighter mb-2">Choose Challenge</h1>
                 <p className="text-cyan-400 font-mono tracking-widest uppercase text-sm">Select a module to begin</p>
               </div>
               <button 
@@ -420,7 +420,7 @@ export default function App() {
               </button>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8 max-w-7xl mx-auto w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-8 max-w-7xl mx-auto w-full pb-20">
               {games.filter(g => g.enabled).map((game, index) => {
                 const info = gameInfoMap[game.slug] || gameInfoMap['reaction'];
                 const Icon = info.icon || Play;
@@ -447,7 +447,7 @@ export default function App() {
                         </div>
                         
                         <div>
-                          <h3 className="text-xl md:text-3xl font-black uppercase tracking-tighter mb-1 group-hover:text-white transition-colors">{game.name}</h3>
+                          <h3 className="text-lg sm:text-xl md:text-3xl font-black uppercase tracking-tighter mb-1 group-hover:text-white transition-colors">{game.name}</h3>
                           <div className="flex items-center gap-3 font-mono text-xs uppercase tracking-widest text-zinc-500">
                              <span className="flex items-center gap-1 text-cyan-400"><Icon size={14} /> {info.difficulty}</span>
                              <span>|</span>
