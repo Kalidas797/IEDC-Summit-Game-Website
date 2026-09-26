@@ -13,6 +13,7 @@ import ReactionEditor from './editors/ReactionEditor';
 import TicTacToeEditor from './editors/TicTacToeEditor';
 import ColorWordEditor from './editors/ColorWordEditor';
 import SequenceMemoryEditor from './editors/SequenceMemoryEditor';
+import RockPaperScissorsEditor from './editors/RockPaperScissorsEditor';
 
 const gameIcons: Record<string, React.ElementType> = {
   'memory': Brain,
@@ -25,6 +26,7 @@ const gameIcons: Record<string, React.ElementType> = {
   'tic-tac-toe': Hash,
   'color-word-challenge': Palette,
   'sequence-memory': Eye,
+  'rock-paper-scissors': Brain,
 };
 
 const gameColors: Record<string, string> = {
@@ -38,6 +40,7 @@ const gameColors: Record<string, string> = {
   'tic-tac-toe': 'text-cyan-400',
   'color-word-challenge': 'text-rose-400',
   'sequence-memory': 'text-cyan-400',
+  'rock-paper-scissors': 'text-orange-400',
 };
 
 export default function ContentEditor() {
@@ -48,7 +51,22 @@ export default function ContentEditor() {
   useEffect(() => {
     const fetchGames = async () => {
       const { data } = await supabase.from('games').select('*').order('display_order');
-      if (data) setGames(data as Game[]);
+      
+      // Auto-insert RPS if missing (for easy deployment)
+      if (data && !data.find(g => g.slug === 'rock-paper-scissors')) {
+        await supabase.from('games').insert([{
+          slug: 'rock-paper-scissors',
+          name: 'Rock Paper Scissors',
+          description: 'Choose your move and beat the computer!',
+          display_order: 10,
+          enabled: true
+        }]);
+        // Refetch after insert
+        const { data: newData } = await supabase.from('games').select('*').order('display_order');
+        if (newData) setGames(newData as Game[]);
+      } else if (data) {
+        setGames(data as Game[]);
+      }
     };
     fetchGames();
   }, []);
@@ -82,6 +100,8 @@ export default function ContentEditor() {
         return <ColorWordEditor gameId={activeGameId} />;
       case 'sequence-memory':
         return <SequenceMemoryEditor gameId={activeGameId} />;
+      case 'rock-paper-scissors':
+        return <RockPaperScissorsEditor gameId={activeGameId} />;
       default:
         return <p className="text-zinc-500 font-mono">Editor not available for this game</p>;
     }

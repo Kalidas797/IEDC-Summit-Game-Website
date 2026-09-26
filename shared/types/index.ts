@@ -174,4 +174,5 @@ export type GameSlug =
   | 'reaction'
   | 'tic-tac-toe'
   | 'color-word-challenge'
-  | 'sequence-memory';
+  | 'sequence-memory'
+  | 'rock-paper-scissors';

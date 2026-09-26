@@ -12,6 +12,7 @@ import HiddenWordsGame from './HiddenWordsGame';
 import WhatChangedGame from './WhatChangedGame';
 import ColorWordGame from './ColorWordGame';
 import SequenceMemoryGame from './SequenceMemoryGame';
+import RockPaperScissorsGame from './RockPaperScissorsGame';
 
 interface GameEngineProps {
   gameId: string;
@@ -171,8 +172,11 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
             {gameId === 'sequence-memory' && (
                <SequenceMemoryGame onUpdateScore={handleScoreUpdate} onComplete={finishGame} />
             )}
+            {gameId === 'rock-paper-scissors' && (
+               <RockPaperScissorsGame onUpdateScore={handleScoreUpdate} onComplete={finishGame} />
+            )}
             {/* Fallback for unimplemented games */}
-            {gameId !== 'reaction' && gameId !== 'memory' && gameId !== 'tic-tac-toe' && gameId !== 'ai-or-human' && gameId !== 'spot-difference' && gameId !== 'doodle' && gameId !== 'crossword' && gameId !== 'what-changed' && gameId !== 'color-word-challenge' && gameId !== 'sequence-memory' && (
+            {gameId !== 'reaction' && gameId !== 'memory' && gameId !== 'tic-tac-toe' && gameId !== 'ai-or-human' && gameId !== 'spot-difference' && gameId !== 'doodle' && gameId !== 'crossword' && gameId !== 'what-changed' && gameId !== 'color-word-challenge' && gameId !== 'sequence-memory' && gameId !== 'rock-paper-scissors' && (
                <div className="flex-1 flex flex-col items-center justify-center">
                  <p className="text-red-400 font-mono uppercase tracking-widest text-xl mb-4">Module Not Found</p>
                  <button onClick={onExit} className="btn-secondary">Return to Hub</button>
