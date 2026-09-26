@@ -102,10 +102,10 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
   return (
     <div className="flex-1 flex flex-col bg-zinc-950 text-zinc-100 overflow-hidden relative">
       {/* Universal Game Header */}
-      <header className="absolute top-0 w-full p-6 flex justify-between items-center z-50 pointer-events-none">
+      <header className="w-full p-4 md:p-6 pb-2 flex justify-between items-center z-50 shrink-0">
         <button 
           onClick={onExit} 
-          className="pointer-events-auto flex items-center gap-2 text-zinc-500 hover:text-red-400 uppercase font-mono font-bold tracking-widest transition-colors"
+          className="flex items-center gap-2 text-zinc-500 hover:text-red-400 uppercase font-mono font-bold tracking-widest transition-colors"
         >
           <XCircle size={20} /> ABORT
         </button>
