@@ -122,7 +122,7 @@ export default function SequenceMemoryGame({ onUpdateScore, onComplete }: Sequen
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 bg-zinc-950">
+    <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 bg-zinc-950 relative">
       
       {/* HUD */}
       <div className="absolute top-6 left-6 right-6 flex justify-between items-center text-zinc-400 font-mono uppercase tracking-widest text-sm md:text-xl pointer-events-none">

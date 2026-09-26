@@ -91,7 +91,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
         questionsPerGame: 1,
         questionTimeLimit: 60,
         maxScorePerQuestion: 100,
-        timeBasedScoringEnabled: false
+        timeBasedScoringEnabled: true
       }) as QuestionsPerGameSettingsData;
       setSettings(config);
       

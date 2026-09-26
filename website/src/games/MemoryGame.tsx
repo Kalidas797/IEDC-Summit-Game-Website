@@ -50,7 +50,7 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
         questionsPerGame: 3,
         questionTimeLimit: 10,
         maxScorePerQuestion: 100,
-        timeBasedScoringEnabled: false
+        timeBasedScoringEnabled: true
       }) as QuestionsPerGameSettingsData;
       setSettings(config);
       const questionsPerGame = config.questionsPerGame;

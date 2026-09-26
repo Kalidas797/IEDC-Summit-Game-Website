@@ -90,7 +90,7 @@ export default function ReactionGame({ onUpdateScore, onComplete }: ReactionGame
 
   return (
     <div 
-      className="flex-1 flex flex-col items-center justify-center cursor-pointer w-full touch-none select-none"
+      className="flex-1 flex flex-col items-center justify-center cursor-pointer w-full touch-none select-none relative"
       onClick={handleClick}
       onMouseDown={(e) => e.preventDefault()}
       onTouchStart={(e) => { e.preventDefault(); handleClick(); }}

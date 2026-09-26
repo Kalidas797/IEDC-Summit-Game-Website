@@ -48,7 +48,7 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
         questionsPerGame: 5,
         questionTimeLimit: 15,
         maxScorePerQuestion: 100,
-        timeBasedScoringEnabled: false
+        timeBasedScoringEnabled: true
       }) as QuestionsPerGameSettingsData;
       setSettings(config);
       

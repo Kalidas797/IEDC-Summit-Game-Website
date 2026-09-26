@@ -41,7 +41,7 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
         questionsPerGame: 1,
         questionTimeLimit: 45,
         maxScorePerQuestion: 200,
-        timeBasedScoringEnabled: false
+        timeBasedScoringEnabled: true
       }) as QuestionsPerGameSettingsData;
       setSettings(config);
       

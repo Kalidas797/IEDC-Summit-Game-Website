@@ -57,7 +57,7 @@ export default function HiddenWordsGame({ onComplete, onExit }: HiddenWordsGameP
         questionsPerGame: 1,
         questionTimeLimit: data.timeLimit || 60,
         maxScorePerQuestion: 100,
-        timeBasedScoringEnabled: false
+        timeBasedScoringEnabled: true
       }) as QuestionsPerGameSettingsData;
       setSettings(config);
 
@@ -208,7 +208,7 @@ export default function HiddenWordsGame({ onComplete, onExit }: HiddenWordsGameP
   const progress = foundWords.size / content.words.length;
 
   return (
-    <div className="fixed inset-0 w-full h-[100dvh] flex flex-col overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black text-white p-2 sm:p-4 md:p-8 lg:p-12 z-50">
+    <div className="flex-1 w-full flex flex-col relative overflow-hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0a0a] to-black text-white p-2 sm:p-4 md:p-8 lg:p-12 z-40">
       
       {/* Premium ambient glows */}
       <div className="absolute top-0 left-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-cyan-600/20 rounded-full blur-[80px] md:blur-[120px] pointer-events-none mix-blend-screen" />
