@@ -225,7 +225,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
   );
 
   return (
-    <div className="flex-1 flex flex-col p-2 md:p-6 relative z-10 w-full max-w-none mx-auto">
+    <div className="flex-1 flex flex-col pt-24 pb-2 px-2 md:pt-28 md:px-6 relative z-10 w-full max-w-none mx-auto">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-2 gap-4 flex-wrap">
@@ -288,11 +288,11 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
       <div className={`flex ${isPortrait ? 'flex-row' : 'flex-col'} gap-3 md:gap-6 flex-1 items-center justify-center`}>
 
         {/* Original */}
-        <div className="flex-1 flex flex-col gap-1">
-          <span className="text-zinc-500 font-mono text-[10px] uppercase tracking-widest">Original</span>
+        <div className="flex-1 flex flex-col gap-1 items-center">
+          <span className="text-zinc-500 font-mono text-[10px] uppercase tracking-widest w-full text-left">Original</span>
           <div
             ref={origContainerRef}
-            className="w-full relative bg-zinc-950 border-2 border-zinc-700 rounded-xl overflow-hidden select-none inline-block"
+            className="w-auto max-w-full relative bg-zinc-950 border-2 border-zinc-700 rounded-xl overflow-hidden select-none inline-block"
             style={{ cursor: gameOver ? 'default' : 'crosshair' }}
             onClick={(e) => handleClick(e, origContainerRef, 'orig')}
             onTouchStart={(e) => { e.preventDefault(); handleClick(e, origContainerRef, 'orig'); }}
@@ -300,7 +300,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
             <img
               src={origUrl}
               alt="Original"
-              className={`block pointer-events-none ${isPortrait ? 'w-full h-auto max-h-[70vh] object-contain' : 'w-auto h-auto max-h-[38vh] max-w-full'}`}
+              className={`block pointer-events-none w-auto h-auto max-w-full object-contain mx-auto ${isPortrait ? 'max-h-[65vh]' : 'max-h-[38vh]'}`}
               draggable={false}
               onLoad={(e) => {
                 const img = e.currentTarget;
@@ -312,11 +312,11 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
         </div>
 
         {/* Modified */}
-        <div className="flex-1 flex flex-col gap-1">
-          <span className="text-red-400 font-mono text-[10px] uppercase tracking-widest">Modified — Tap differences ↓</span>
+        <div className="flex-1 flex flex-col gap-1 items-center">
+          <span className="text-red-400 font-mono text-[10px] uppercase tracking-widest w-full text-left">Modified — Tap differences ↓</span>
           <div
             ref={modContainerRef}
-            className="w-full relative bg-zinc-950 border-2 border-red-800/60 rounded-xl overflow-hidden select-none inline-block"
+            className="w-auto max-w-full relative bg-zinc-950 border-2 border-red-800/60 rounded-xl overflow-hidden select-none inline-block"
             style={{ cursor: gameOver ? 'default' : 'crosshair' }}
             onClick={(e) => handleClick(e, modContainerRef, 'mod')}
             onTouchStart={(e) => { e.preventDefault(); handleClick(e, modContainerRef, 'mod'); }}
@@ -324,7 +324,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
             <img
               src={modUrl}
               alt="Modified"
-              className={`block pointer-events-none ${isPortrait ? 'w-full h-auto max-h-[70vh] object-contain' : 'w-auto h-auto max-h-[38vh] max-w-full'}`}
+              className={`block pointer-events-none w-auto h-auto max-w-full object-contain mx-auto ${isPortrait ? 'max-h-[65vh]' : 'max-h-[38vh]'}`}
               draggable={false}
             />
             {renderOverlay('mod')}
