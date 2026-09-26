@@ -28,6 +28,53 @@ const gameInfoMap: Record<string, any> = {
 export default function App() {
   const [view, setViewInternal] = useState<ViewState>('attract');
   
+  React.useEffect(() => {
+    let title = "PaperLab Games Arena";
+    let desc = "Welcome to the PaperLab Games Arena! Test your skills with interactive mini-games including Memory, Spot the Difference, Reaction Challenge, AI vs Human, and more. Compete on the live leaderboard at the IEDC Summit.";
+    
+    switch (view) {
+      case 'leaderboard':
+        title = "Leaderboard | PaperLab Games Arena";
+        desc = "View the top scores and live leaderboard for the PaperLab Games Arena.";
+        break;
+      case 'privacy':
+        title = "Privacy Policy | PaperLab Games Arena";
+        desc = "Privacy Policy for the PaperLab Games Arena.";
+        break;
+      case 'terms':
+        title = "Terms & Conditions | PaperLab Games Arena";
+        desc = "Terms and Conditions for the PaperLab Games Arena.";
+        break;
+      case 'selection':
+      case 'game':
+        title = "Play | PaperLab Games Arena";
+        desc = "Choose a game and test your skills in the PaperLab Games Arena.";
+        break;
+      default:
+        title = "PaperLab Games Arena";
+        break;
+    }
+    
+    document.title = title;
+    
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) {
+      metaDesc.setAttribute('content', desc);
+    }
+    const metaTitle = document.querySelector('meta[name="title"]');
+    if (metaTitle) {
+      metaTitle.setAttribute('content', title);
+    }
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) {
+      ogTitle.setAttribute('content', title);
+    }
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) {
+      ogDesc.setAttribute('content', desc);
+    }
+  }, [view]);
+  
   const setView = (newView: typeof view, replace: boolean = false) => {
     if (replace) {
       window.history.replaceState({ view: newView }, '', `#${newView}`);
