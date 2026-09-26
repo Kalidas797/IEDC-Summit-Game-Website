@@ -86,10 +86,9 @@ export interface MCQuestion {
   correctAnswer: number; // index into options
 }
 
-/** AI or Human — data shape */
-export interface AIOrHumanContentData {
-  contentType: 'image' | 'text';
-  correctAnswer: 'AI' | 'HUMAN';
+/** Original or AI — data shape */
+export interface OriginalOrAIContentData {
+  aiImagePath: string;
   explanation: string;
 }
 

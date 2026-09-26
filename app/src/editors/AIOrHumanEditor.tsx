@@ -3,7 +3,7 @@ import { supabase } from '../supabase';
 import { Trash2, Edit, Plus, Power } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AssetUploader from '../components/AssetUploader';
-import type { GameContent } from '../../../shared/types';
+import type { GameContent, OriginalOrAIContentData } from '../../../shared/types';
 
 interface Props { gameId: string; }
 
@@ -15,8 +15,8 @@ export default function AIOrHumanEditor({ gameId }: Props) {
   const [title, setTitle] = useState('');
   const [difficulty, setDifficulty] = useState<'EASY' | 'MEDIUM' | 'HARD'>('MEDIUM');
   const [isActive, setIsActive] = useState(true);
-  const [storagePath, setStoragePath] = useState<string | null>(null);
-  const [correctAnswer, setCorrectAnswer] = useState<'AI' | 'HUMAN'>('AI');
+  const [storagePath, setStoragePath] = useState<string | null>(null); // Original Image
+  const [aiImagePath, setAiImagePath] = useState<string | null>(null); // AI Version
   const [explanation, setExplanation] = useState('');
 
   useEffect(() => { fetchContents(); }, [gameId]);
@@ -28,24 +28,28 @@ export default function AIOrHumanEditor({ gameId }: Props) {
 
   const openNew = () => {
     setIsNew(true); setEditing(null);
-    setTitle('New AI or Human Challenge');
+    setTitle('New Original or AI? Challenge');
     setDifficulty('MEDIUM'); setIsActive(true); setStoragePath(null);
-    setCorrectAnswer('AI'); setExplanation('');
+    setAiImagePath(null); setExplanation('');
   };
 
   const openEdit = (c: GameContent) => {
     setIsNew(false); setEditing(c);
     setTitle(c.title); setDifficulty(c.difficulty); setIsActive(c.is_active);
     setStoragePath(c.storage_path);
-    setCorrectAnswer(c.data?.correctAnswer || 'AI');
+    setAiImagePath(c.data?.aiImagePath || null);
     setExplanation(c.data?.explanation || '');
   };
 
   const save = async () => {
+    if (!storagePath || !aiImagePath) {
+      alert("Please upload both the original and AI version before publishing.");
+      return;
+    }
     const payload = {
       game_id: gameId, title, difficulty, is_active: isActive, storage_path: storagePath,
-      content_type: 'ai-or-human-challenge',
-      data: { contentType: 'image', correctAnswer, explanation },
+      content_type: 'original-or-ai-challenge',
+      data: { aiImagePath, explanation } as OriginalOrAIContentData,
     };
     if (editing) {
       await supabase.from('game_content').update(payload).eq('id', editing.id);
@@ -70,11 +74,11 @@ export default function AIOrHumanEditor({ gameId }: Props) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6">
         <div className="flex justify-between items-center">
-          <h3 className="text-xl font-black uppercase tracking-wider">{isNew ? 'Create' : 'Edit'} AI/Human Challenge</h3>
+          <h3 className="text-xl font-black uppercase tracking-wider">{isNew ? 'Create' : 'Edit'} Original/AI Challenge</h3>
           <button onClick={() => { setEditing(null); setIsNew(false); }} className="text-zinc-500 hover:text-white font-mono text-sm uppercase">[Cancel]</button>
         </div>
 
-        <input className="p-4 bg-black/50 border border-white/10 text-white font-mono rounded-lg outline-none focus:border-cyan-400" value={title} onChange={e => setTitle(e.target.value)} placeholder="Challenge Title" />
+        <input className="p-4 bg-black/50 border border-white/10 text-white font-mono rounded-lg outline-none focus:border-cyan-400" value={title} onChange={e => setTitle(e.target.value)} placeholder="Challenge Title (Optional)" />
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-2">
@@ -94,19 +98,26 @@ export default function AIOrHumanEditor({ gameId }: Props) {
           </div>
         </div>
 
-        <AssetUploader bucket="game-documents" currentPath={storagePath} onUpload={setStoragePath} onRemove={() => setStoragePath(null)} label="Image / Artwork" />
-
-        <div className="flex flex-col gap-3">
-          <span className="font-mono text-xs uppercase text-zinc-400 tracking-widest">Correct Answer</span>
-          <div className="flex gap-4">
-            <button onClick={() => setCorrectAnswer('AI')} className={`flex-1 py-4 font-black uppercase tracking-widest rounded-lg transition-all ${correctAnswer === 'AI' ? 'bg-cyan-500 text-black shadow-[0_0_20px_rgba(34,211,238,0.3)]' : 'bg-zinc-900 text-zinc-500 border border-white/10'}`}>AI Generated</button>
-            <button onClick={() => setCorrectAnswer('HUMAN')} className={`flex-1 py-4 font-black uppercase tracking-widest rounded-lg transition-all ${correctAnswer === 'HUMAN' ? 'bg-lime-400 text-black shadow-[0_0_20px_rgba(163,230,53,0.3)]' : 'bg-zinc-900 text-zinc-500 border border-white/10'}`}>Human Created</button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          <div className="flex flex-col gap-2">
+            <div className="p-4 bg-zinc-900 border border-white/10 rounded-lg">
+              <h4 className="font-black text-lime-400 mb-2 uppercase tracking-widest text-sm">ORIGINAL IMAGE</h4>
+              <p className="text-xs text-zinc-500 mb-4 font-mono">This is the real/original image.</p>
+              <AssetUploader bucket="game-documents" currentPath={storagePath} onUpload={setStoragePath} onRemove={() => setStoragePath(null)} label="Original Image" />
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <div className="p-4 bg-zinc-900 border border-white/10 rounded-lg">
+              <h4 className="font-black text-cyan-400 mb-2 uppercase tracking-widest text-sm">AI VERSION</h4>
+              <p className="text-xs text-zinc-500 mb-4 font-mono">This is the AI-enhanced or generated version.</p>
+              <AssetUploader bucket="game-documents" currentPath={aiImagePath} onUpload={setAiImagePath} onRemove={() => setAiImagePath(null)} label="AI Version" />
+            </div>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 mt-4">
           <span className="font-mono text-xs uppercase text-zinc-400 tracking-widest">Explanation (shown after reveal)</span>
-          <textarea className="w-full h-24 p-3 bg-black/50 border border-white/10 text-white font-mono rounded-lg outline-none focus:border-cyan-400 resize-none" value={explanation} onChange={e => setExplanation(e.target.value)} placeholder="e.g. The distorted fingers and warped background are telltale AI artifacts..." />
+          <textarea className="w-full h-24 p-3 bg-black/50 border border-white/10 text-white font-mono rounded-lg outline-none focus:border-cyan-400 resize-none" value={explanation} onChange={e => setExplanation(e.target.value)} placeholder="e.g. The AI version has altered the lighting and removed small background details..." />
         </div>
 
         <div className="flex gap-4 mt-4 justify-end border-t border-white/10 pt-4">
@@ -120,7 +131,7 @@ export default function AIOrHumanEditor({ gameId }: Props) {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-xl font-black uppercase tracking-wider">AI or Human Challenges</h3>
+        <h3 className="text-xl font-black uppercase tracking-wider">Original or AI? Challenges</h3>
         <button onClick={openNew} className="btn-primary flex items-center gap-2 text-sm"><Plus size={16} /> Add Challenge</button>
       </div>
       {contents.length === 0 && <p className="text-zinc-600 font-mono text-center py-12 animate-pulse">No challenges created yet</p>}
@@ -132,9 +143,9 @@ export default function AIOrHumanEditor({ gameId }: Props) {
             <div key={c.id} className="admin-card flex flex-col md:flex-row gap-4 items-start md:items-center p-4">
               {thumbUrl ? <img src={thumbUrl} alt="" className="w-20 h-14 object-cover rounded border border-white/10 bg-zinc-900" /> : <div className="w-20 h-14 bg-zinc-900 border border-white/10 rounded flex items-center justify-center text-zinc-700 text-[10px] font-mono">NO IMG</div>}
               <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-white truncate">{c.title}</h4>
+                <h4 className="font-bold text-white truncate">{c.title || 'Untitled Challenge'}</h4>
                 <div className="flex gap-3 text-xs text-zinc-500 font-mono mt-1">
-                  <span>Answer: {c.data?.correctAnswer}</span><span>•</span><span>{c.difficulty}</span>
+                  <span>{c.difficulty}</span>
                 </div>
               </div>
               <span className={`px-3 py-1 rounded-full text-[10px] uppercase font-black tracking-widest ${c.is_active ? 'bg-lime-400/20 text-lime-400 border border-lime-400/50' : 'bg-red-500/20 text-red-400 border border-red-500/50'}`}>{c.is_active ? 'Active' : 'Inactive'}</span>
@@ -150,3 +161,4 @@ export default function AIOrHumanEditor({ gameId }: Props) {
     </motion.div>
   );
 }
+
