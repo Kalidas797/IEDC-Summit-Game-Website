@@ -456,12 +456,6 @@ export default function App() {
                         </div>
                       </div>
 
-                      {/* Status Indicator */}
-                      <div className="hidden sm:flex flex-col items-end">
-                        <div className="bg-lime-400 text-zinc-950 font-black uppercase text-xs px-3 py-1 animate-pulse">
-                          Ready
-                        </div>
-                      </div>
                     </div>
                   </motion.div>
                 );
