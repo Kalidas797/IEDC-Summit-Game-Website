@@ -49,13 +49,10 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
   const [flashId, setFlashId] = useState<string | null>(null);
   const [gameOver, setGameOver] = useState(false);
   const [allFound, setAllFound] = useState(false);
-  const [isPortrait, setIsPortrait] = useState(false);
 
   // Attach click containers directly — NOT inner components
   const origContainerRef = useRef<HTMLDivElement>(null);
   const modContainerRef = useRef<HTMLDivElement>(null);
-  const origImgRef = useRef<HTMLImageElement>(null);
-  const modImgRef = useRef<HTMLImageElement>(null);
   const startTimeRef = useRef<number>(0);
 
   // Use refs to avoid stale closures in callbacks
@@ -108,7 +105,6 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
   const handleClick = useCallback((
     e: React.MouseEvent | React.TouchEvent,
     containerRef: React.RefObject<HTMLDivElement | null>,
-    imgRef: React.RefObject<HTMLImageElement | null>,
     side: 'orig' | 'mod'
   ) => {
     if (gameOverRef.current || !contentRef.current) return;
@@ -116,10 +112,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
     const el = containerRef.current;
     if (!el) return;
 
-    // Normalize against the actual rendered image pixels, not the outer div.
-    // This prevents letterboxing offsets when object-contain adds invisible space.
-    const imgEl = imgRef.current;
-    const rect = imgEl ? imgEl.getBoundingClientRect() : el.getBoundingClientRect();
+    const rect = el.getBoundingClientRect();
 
     let clientX: number, clientY: number;
     if ('touches' in e) {
@@ -131,7 +124,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
       clientY = (e as React.MouseEvent).clientY;
     }
 
-    // Normalize to 0-1 within the actual image pixels
+    // Normalize to 0-1 within the container (same system as admin annotation tool)
     const normX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const normY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
 
@@ -231,7 +224,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
   );
 
   return (
-    <div className="flex-1 flex flex-col pt-24 pb-2 px-2 md:pt-28 md:px-6 relative z-10 w-full max-w-none mx-auto">
+    <div className="flex-1 flex flex-col p-3 md:p-6 relative z-10 w-full max-w-7xl mx-auto">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-2 gap-4 flex-wrap">
@@ -290,49 +283,43 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
         )}
       </AnimatePresence>
 
-      {/* Images */}
-      <div className={`flex ${isPortrait ? 'flex-row' : 'flex-col'} gap-3 md:gap-6 flex-1 items-center justify-center`}>
+      {/* Images — IMPORTANT: containers must be aspect-video to match the admin annotation tool */}
+      <div className="flex flex-col md:flex-row gap-3">
 
         {/* Original */}
-        <div className="flex-1 flex flex-col gap-1 items-center">
-          <span className="text-zinc-500 font-mono text-[10px] uppercase tracking-widest w-full text-left">Original</span>
+        <div className="flex-1 flex flex-col gap-1">
+          <span className="text-zinc-500 font-mono text-[10px] uppercase tracking-widest">Original</span>
           <div
             ref={origContainerRef}
-            className="w-auto max-w-full relative bg-zinc-950 border-2 border-zinc-700 rounded-xl overflow-hidden select-none inline-block"
+            className="w-full aspect-video relative bg-zinc-950 border-2 border-zinc-700 rounded-xl overflow-hidden select-none"
             style={{ cursor: gameOver ? 'default' : 'crosshair' }}
-            onClick={(e) => handleClick(e, origContainerRef, origImgRef, 'orig')}
-            onTouchStart={(e) => { e.preventDefault(); handleClick(e, origContainerRef, origImgRef, 'orig'); }}
+            onClick={(e) => handleClick(e, origContainerRef, 'orig')}
+            onTouchStart={(e) => { e.preventDefault(); handleClick(e, origContainerRef, 'orig'); }}
           >
             <img
-              ref={origImgRef}
               src={origUrl}
               alt="Original"
-              className={`block pointer-events-none w-auto h-auto max-w-full object-contain ${isPortrait ? 'max-h-[65vh]' : 'max-h-[38vh]'}`}
+              className="w-full h-full object-contain block pointer-events-none"
               draggable={false}
-              onLoad={(e) => {
-                const img = e.currentTarget;
-                setIsPortrait(img.naturalHeight > img.naturalWidth);
-              }}
             />
             {renderOverlay('orig')}
           </div>
         </div>
 
         {/* Modified */}
-        <div className="flex-1 flex flex-col gap-1 items-center">
-          <span className="text-red-400 font-mono text-[10px] uppercase tracking-widest w-full text-left">Modified — Tap differences ↓</span>
+        <div className="flex-1 flex flex-col gap-1">
+          <span className="text-red-400 font-mono text-[10px] uppercase tracking-widest">Modified — Tap differences ↓</span>
           <div
             ref={modContainerRef}
-            className="w-auto max-w-full relative bg-zinc-950 border-2 border-red-800/60 rounded-xl overflow-hidden select-none inline-block"
+            className="w-full aspect-video relative bg-zinc-950 border-2 border-red-800/60 rounded-xl overflow-hidden select-none"
             style={{ cursor: gameOver ? 'default' : 'crosshair' }}
-            onClick={(e) => handleClick(e, modContainerRef, modImgRef, 'mod')}
-            onTouchStart={(e) => { e.preventDefault(); handleClick(e, modContainerRef, modImgRef, 'mod'); }}
+            onClick={(e) => handleClick(e, modContainerRef, 'mod')}
+            onTouchStart={(e) => { e.preventDefault(); handleClick(e, modContainerRef, 'mod'); }}
           >
             <img
-              ref={modImgRef}
               src={modUrl}
               alt="Modified"
-              className={`block pointer-events-none w-auto h-auto max-w-full object-contain ${isPortrait ? 'max-h-[65vh]' : 'max-h-[38vh]'}`}
+              className="w-full h-full object-contain block pointer-events-none"
               draggable={false}
             />
             {renderOverlay('mod')}
