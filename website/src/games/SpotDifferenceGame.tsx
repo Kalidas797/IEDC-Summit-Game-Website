@@ -307,7 +307,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
               ref={origImgRef}
               src={origUrl}
               alt="Original"
-              className={`block pointer-events-none ${isPortrait ? 'h-[65vh] w-auto max-w-full' : 'max-h-[38vh] w-auto max-w-full'}`}
+              className={`block pointer-events-none w-auto h-auto max-w-full object-contain ${isPortrait ? 'max-h-[65vh]' : 'max-h-[38vh]'}`}
               draggable={false}
               onLoad={(e) => {
                 const img = e.currentTarget;
@@ -332,7 +332,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
               ref={modImgRef}
               src={modUrl}
               alt="Modified"
-              className={`block pointer-events-none ${isPortrait ? 'h-[65vh] w-auto max-w-full' : 'max-h-[38vh] w-auto max-w-full'}`}
+              className={`block pointer-events-none w-auto h-auto max-w-full object-contain ${isPortrait ? 'max-h-[65vh]' : 'max-h-[38vh]'}`}
               draggable={false}
             />
             {renderOverlay('mod')}
