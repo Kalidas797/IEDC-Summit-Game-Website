@@ -124,7 +124,8 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
       clientY = (e as React.MouseEvent).clientY;
     }
 
-    // Normalize to 0-1 within the container (same system as admin annotation tool)
+    // Normalize to 0-1 within the border box — must match the admin annotation tool's
+    // getNormCoords which also uses getBoundingClientRect().width/height
     const normX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const normY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
 
@@ -224,19 +225,19 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
   );
 
   return (
-    <div className="flex-1 flex flex-col p-3 md:p-6 relative z-10 w-full max-w-7xl mx-auto">
+    <div className="flex-1 flex flex-col p-3 md:p-4 relative z-10 w-full max-w-[100rem] mx-auto min-h-0">
 
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2 gap-4 flex-wrap">
+      {/* Header — compact */}
+      <div className="flex items-center justify-between mb-1 md:mb-2 gap-2 flex-wrap shrink-0">
         <div>
-          <h2 className="text-lg md:text-2xl font-black uppercase text-red-400 tracking-widest">Spot the Difference</h2>
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className="text-zinc-400 font-mono text-xs uppercase">{foundIds.size}/{regions.length} found</span>
+          <h2 className="text-base md:text-xl font-black uppercase text-red-400 tracking-widest">Spot the Difference</h2>
+          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            <span className="text-zinc-400 font-mono text-[10px] md:text-xs uppercase">{foundIds.size}/{regions.length} found</span>
             <div className="flex gap-1">
               {regions.map((r, i) => (
                 <div
                   key={r.id}
-                  className={`w-3 h-3 rounded-full border transition-all duration-300 ${foundIds.has(r.id) ? 'bg-lime-400 border-lime-400' : 'bg-zinc-800 border-zinc-600'}`}
+                  className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-full border transition-all duration-300 ${foundIds.has(r.id) ? 'bg-lime-400 border-lime-400' : 'bg-zinc-800 border-zinc-600'}`}
                   title={`Difference ${i + 1}`}
                 />
               ))}
@@ -244,15 +245,15 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
           </div>
         </div>
         <div className="flex flex-col items-end">
-          <div className={`text-3xl font-black font-mono tabular-nums ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
+          <div className={`text-2xl md:text-3xl font-black font-mono tabular-nums ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
             {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
           </div>
-          <div className="text-lime-400 font-mono text-sm font-bold">{score} pts</div>
+          <div className="text-lime-400 font-mono text-xs md:text-sm font-bold">{score} pts</div>
         </div>
       </div>
 
       {/* Progress bar */}
-      <div className="w-full h-1 bg-zinc-800 rounded-full mb-3 overflow-hidden">
+      <div className="w-full h-1 bg-zinc-800 rounded-full mb-1 md:mb-2 overflow-hidden shrink-0">
         <div
           className="h-full bg-gradient-to-r from-cyan-500 to-lime-400 transition-all duration-500 rounded-full"
           style={{ width: `${pct}%` }}
@@ -283,52 +284,56 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
         )}
       </AnimatePresence>
 
-      {/* Images — IMPORTANT: containers must be aspect-video to match the admin annotation tool */}
-      <div className="flex flex-col md:flex-row gap-3">
+      {/* Images — aspect-video preserved for hitbox alignment; height-first sizing fills available space */}
+      <div className="flex-1 flex flex-col md:flex-row gap-2 md:gap-3 min-h-0">
 
         {/* Original */}
-        <div className="flex-1 flex flex-col gap-1">
-          <span className="text-zinc-500 font-mono text-[10px] uppercase tracking-widest">Original</span>
-          <div
-            ref={origContainerRef}
-            className="w-full aspect-video relative bg-zinc-950 border-2 border-zinc-700 rounded-xl overflow-hidden select-none"
-            style={{ cursor: gameOver ? 'default' : 'crosshair' }}
-            onClick={(e) => handleClick(e, origContainerRef, 'orig')}
-            onTouchStart={(e) => { e.preventDefault(); handleClick(e, origContainerRef, 'orig'); }}
-          >
-            <img
-              src={origUrl}
-              alt="Original"
-              className="w-full h-full object-contain block pointer-events-none"
-              draggable={false}
-            />
-            {renderOverlay('orig')}
+        <div className="flex-1 flex flex-col gap-0.5 min-h-0 min-w-0">
+          <span className="text-zinc-500 font-mono text-[10px] uppercase tracking-widest shrink-0">Original</span>
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <div
+              ref={origContainerRef}
+              className="aspect-video h-full max-w-full relative bg-zinc-950 border-2 border-zinc-700 rounded-xl overflow-hidden select-none"
+              style={{ cursor: gameOver ? 'default' : 'crosshair' }}
+              onClick={(e) => handleClick(e, origContainerRef, 'orig')}
+              onTouchStart={(e) => { e.preventDefault(); handleClick(e, origContainerRef, 'orig'); }}
+            >
+              <img
+                src={origUrl}
+                alt="Original"
+                className="w-full h-full object-contain block pointer-events-none"
+                draggable={false}
+              />
+              {renderOverlay('orig')}
+            </div>
           </div>
         </div>
 
         {/* Modified */}
-        <div className="flex-1 flex flex-col gap-1">
-          <span className="text-red-400 font-mono text-[10px] uppercase tracking-widest">Modified — Tap differences ↓</span>
-          <div
-            ref={modContainerRef}
-            className="w-full aspect-video relative bg-zinc-950 border-2 border-red-800/60 rounded-xl overflow-hidden select-none"
-            style={{ cursor: gameOver ? 'default' : 'crosshair' }}
-            onClick={(e) => handleClick(e, modContainerRef, 'mod')}
-            onTouchStart={(e) => { e.preventDefault(); handleClick(e, modContainerRef, 'mod'); }}
-          >
-            <img
-              src={modUrl}
-              alt="Modified"
-              className="w-full h-full object-contain block pointer-events-none"
-              draggable={false}
-            />
-            {renderOverlay('mod')}
+        <div className="flex-1 flex flex-col gap-0.5 min-h-0 min-w-0">
+          <span className="text-red-400 font-mono text-[10px] uppercase tracking-widest shrink-0">Modified — Tap differences ↓</span>
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <div
+              ref={modContainerRef}
+              className="aspect-video h-full max-w-full relative bg-zinc-950 border-2 border-red-800/60 rounded-xl overflow-hidden select-none"
+              style={{ cursor: gameOver ? 'default' : 'crosshair' }}
+              onClick={(e) => handleClick(e, modContainerRef, 'mod')}
+              onTouchStart={(e) => { e.preventDefault(); handleClick(e, modContainerRef, 'mod'); }}
+            >
+              <img
+                src={modUrl}
+                alt="Modified"
+                className="w-full h-full object-contain block pointer-events-none"
+                draggable={false}
+              />
+              {renderOverlay('mod')}
+            </div>
           </div>
         </div>
 
       </div>
 
-      <p className="mt-2 text-zinc-600 font-mono text-[10px] tracking-widest uppercase text-center">
+      <p className="mt-1 text-zinc-600 font-mono text-[10px] tracking-widest uppercase text-center shrink-0">
         Click on either image where you spot a difference • +100 pts each
       </p>
     </div>
