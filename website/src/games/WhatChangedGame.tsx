@@ -10,10 +10,11 @@ interface WhatChangedGameProps {
 
 type Phase = 'loading' | 'error' | 'memorize' | 'recall' | 'gameover';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatChangedGameProps) {
   const [phase, setPhase] = useState<Phase>('loading');
-  const [content, setContent] = useState<GameContent | null>(null);
+  const [challenges, setChallenges] = useState<GameContent[]>([]);
+  const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
+  const content = challenges[currentChallengeIndex] || null;
   const [memoryTimeLeft, setMemoryTimeLeft] = useState(10);
   const [recallTimeLeft, setRecallTimeLeft] = useState(45);
   const [foundRegions, setFoundRegions] = useState<Set<string>>(new Set());
@@ -28,12 +29,31 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
     async function load() {
       const { data: gameData } = await supabase.from('games').select('id').eq('slug', 'what-changed').single();
       if (!gameData) return setPhase('error');
-      const { data: contentData } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('is_active', true);
+      
+      const { data: settingsData } = await supabase
+        .from('game_content').select('data')
+        .eq('game_id', gameData.id).eq('content_type', 'what-changed-settings').single();
+      const questionsPerGame = settingsData?.data?.questionsPerGame || 1;
+      
+      const { data: contentData } = await supabase.from('game_content').select('*')
+        .eq('game_id', gameData.id).eq('is_active', true)
+        .eq('content_type', 'what-changed-challenge');
       if (!contentData || contentData.length === 0) return setPhase('error');
-      const chosen = contentData[Math.floor(Math.random() * contentData.length)];
-      setContent(chosen);
-      setMemoryTimeLeft(chosen.data?.memoryTime || 10);
-      setRecallTimeLeft(chosen.data?.timeLimit || 45);
+      
+      // Shuffle & Select
+      const shuffled = [...contentData];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      
+      const selected = shuffled.slice(0, questionsPerGame);
+      if (selected.length === 0) return setPhase('error');
+      
+      setChallenges(selected);
+      setCurrentChallengeIndex(0);
+      setMemoryTimeLeft(selected[0].data?.memoryTime || 10);
+      setRecallTimeLeft(selected[0].data?.timeLimit || 45);
       setPhase('memorize');
       startTimeRef.current = performance.now();
     }
@@ -57,9 +77,20 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
   }, [recallTimeLeft, phase]);
 
   const endGame = () => {
-    setPhase('gameover');
-    const totalTime = performance.now() - startTimeRef.current;
-    setTimeout(() => onComplete(score, totalTime), 2500);
+    if (currentChallengeIndex < challenges.length - 1) {
+      setTimeout(() => {
+        const nextIndex = currentChallengeIndex + 1;
+        setCurrentChallengeIndex(nextIndex);
+        setFoundRegions(new Set());
+        setMemoryTimeLeft(challenges[nextIndex].data?.memoryTime || 10);
+        setRecallTimeLeft(challenges[nextIndex].data?.timeLimit || 45);
+        setPhase('memorize');
+      }, 2000);
+    } else {
+      setPhase('gameover');
+      const totalTime = performance.now() - startTimeRef.current;
+      setTimeout(() => onComplete(score, totalTime), 2500);
+    }
   };
 
   const isPointInRegion = (px: number, py: number, r: DifferenceRegion) => {
@@ -204,7 +235,9 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
           <motion.div key="recall" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center w-full h-full">
             <div className="w-full flex justify-between items-center mb-4 border-b-2 border-zinc-800 pb-3">
               <div>
-                <h2 className="font-mono text-lg uppercase tracking-widest text-orange-400">What Changed?</h2>
+                <h2 className="font-mono text-lg uppercase tracking-widest text-orange-400">
+                  What Changed? <span className="text-white opacity-50 text-sm">({currentChallengeIndex + 1}/{challenges.length})</span>
+                </h2>
                 <p className="text-zinc-500 font-mono text-xs mt-1">Found: {foundRegions.size} / {regions.length}</p>
               </div>
               <div className={`text-3xl font-mono font-bold ${recallTimeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-white'}`}>{recallTimeLeft}s</div>

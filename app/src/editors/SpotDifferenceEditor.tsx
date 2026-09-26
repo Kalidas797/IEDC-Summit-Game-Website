@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import AssetUploader from '../components/AssetUploader';
 import DifferenceMarkerEditor from '../components/DifferenceMarkerEditor';
 import type { GameContent, DifferenceRegion } from '../../../shared/types';
+import QuestionsPerGameEditor from '../components/QuestionsPerGameEditor';
 
 interface Props { gameId: string; gameType: 'spot-difference' | 'what-changed'; }
 
@@ -28,7 +29,7 @@ export default function SpotDifferenceEditor({ gameId, gameType }: Props) {
   useEffect(() => { fetchContents(); }, [gameId]);
 
   const fetchContents = async () => {
-    const { data } = await supabase.from('game_content').select('*').eq('game_id', gameId).order('created_at', { ascending: false });
+    const { data } = await supabase.from('game_content').select('*').eq('game_id', gameId).eq('content_type', `${gameType}-challenge`).order('created_at', { ascending: false });
     if (data) setContents(data as GameContent[]);
   };
 
@@ -146,6 +147,12 @@ export default function SpotDifferenceEditor({ gameId, gameType }: Props) {
         <h3 className="text-xl font-black uppercase tracking-wider">{label} Challenges</h3>
         <button onClick={openNew} className="btn-primary flex items-center gap-2 text-sm"><Plus size={16} /> Add Challenge</button>
       </div>
+
+      <QuestionsPerGameEditor 
+        gameId={gameId} 
+        settingsContentType={`${gameType}-settings`} 
+        activeContentCount={contents.filter(c => c.is_active).length} 
+      />
       {contents.length === 0 && <p className="text-zinc-600 font-mono text-center py-12 animate-pulse">No challenges created yet</p>}
       <div className="flex flex-col gap-3">
         {contents.map(c => (

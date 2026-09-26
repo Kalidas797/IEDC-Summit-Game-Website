@@ -31,16 +31,36 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
       const { data: gameData } = await supabase.from('games').select('id').eq('slug', 'ai-or-human').single();
       if (!gameData) return setState('error');
       
+      // Fetch settings
+      const { data: settingsData } = await supabase
+        .from('game_content')
+        .select('data')
+        .eq('game_id', gameData.id)
+        .eq('content_type', 'ai-or-human-settings')
+        .single();
+        
+      const questionsPerGame = settingsData?.data?.questionsPerGame || 5;
+      
       const { data: contentData } = await supabase
         .from('game_content')
         .select('*')
         .eq('game_id', gameData.id)
+        .eq('content_type', 'original-or-ai-challenge')
         .eq('is_active', true);
         
       if (!contentData || contentData.length === 0) return setState('error');
       
-      // Shuffle challenges
-      setChallenges(contentData.sort(() => 0.5 - Math.random()));
+      // Fisher-Yates shuffle
+      const shuffled = [...contentData];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      
+      const selected = shuffled.slice(0, questionsPerGame);
+      if (selected.length === 0) return setState('error');
+      
+      setChallenges(selected);
       setOriginalIsRight(Math.random() > 0.5);
       setState('ready');
     }

@@ -4,6 +4,7 @@ import { Trash2, Edit, Plus, Power } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AssetUploader from '../components/AssetUploader';
 import type { GameContent, MCQuestion } from '../../../shared/types';
+import QuestionsPerGameEditor from '../components/QuestionsPerGameEditor';
 
 interface Props { gameId: string; }
 
@@ -24,7 +25,7 @@ export default function MemoryEditor({ gameId }: Props) {
   useEffect(() => { fetchContents(); }, [gameId]);
 
   const fetchContents = async () => {
-    const { data } = await supabase.from('game_content').select('*').eq('game_id', gameId).order('created_at', { ascending: false });
+    const { data } = await supabase.from('game_content').select('*').eq('game_id', gameId).eq('content_type', 'memory-challenge').order('created_at', { ascending: false });
     if (data) setContents(data as GameContent[]);
   };
 
@@ -188,6 +189,12 @@ export default function MemoryEditor({ gameId }: Props) {
         <h3 className="text-xl font-black uppercase tracking-wider">Memory Challenges</h3>
         <button onClick={openNew} className="btn-primary flex items-center gap-2 text-sm"><Plus size={16} /> Add Challenge</button>
       </div>
+
+      <QuestionsPerGameEditor 
+        gameId={gameId} 
+        settingsContentType="memory-settings" 
+        activeContentCount={contents.filter(c => c.is_active).length} 
+      />
 
       {contents.length === 0 && <p className="text-zinc-600 font-mono text-center py-12 animate-pulse">No challenges created yet</p>}
 

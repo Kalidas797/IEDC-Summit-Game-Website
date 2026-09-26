@@ -12,13 +12,16 @@ type MemoryState = 'loading' | 'ready' | 'memorize' | 'questions' | 'result' | '
 
 export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProps) {
   const [state, setState] = useState<MemoryState>('loading');
-  const [content, setContent] = useState<GameContent | null>(null);
+  const [challenges, setChallenges] = useState<GameContent[]>([]);
+  const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
   const [countdown, setCountdown] = useState(3);
   const [memoryTimeLeft, setMemoryTimeLeft] = useState(5);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(null);
+  
+  const content = challenges[currentChallengeIndex] || null;
   
   const startTimeRef = useRef<number>(0);
   
@@ -31,11 +34,21 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
         return;
       }
       
-      // 2. Fetch Active Content
+      // Fetch Settings
+      const { data: settingsData } = await supabase
+        .from('game_content')
+        .select('data')
+        .eq('game_id', gameData.id)
+        .eq('content_type', 'memory-settings')
+        .single();
+      const questionsPerGame = settingsData?.data?.questionsPerGame || 3;
+
+      // Fetch Active Content
       const { data: contentData } = await supabase
         .from('game_content')
         .select('*')
         .eq('game_id', gameData.id)
+        .eq('content_type', 'memory-challenge')
         .eq('is_active', true);
         
       if (!contentData || contentData.length === 0) {
@@ -43,10 +56,19 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
         return;
       }
       
-      // Pick random active challenge
-      const randomContent = contentData[Math.floor(Math.random() * contentData.length)];
-      setContent(randomContent);
-      setMemoryTimeLeft((randomContent.data.displayDuration || 5000) / 1000);
+      // Shuffle & Select
+      const shuffled = [...contentData];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      
+      const selected = shuffled.slice(0, questionsPerGame);
+      if (selected.length === 0) return setState('error');
+
+      setChallenges(selected);
+      setCurrentChallengeIndex(0);
+      setMemoryTimeLeft((selected[0].data.displayDuration || 5000) / 1000);
       setState('ready');
     }
     
@@ -102,8 +124,17 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
       if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
       } else {
-        const totalTime = performance.now() - startTimeRef.current;
-        onComplete(newScore, totalTime);
+        if (currentChallengeIndex < challenges.length - 1) {
+          setCurrentChallengeIndex(prev => prev + 1);
+          setCurrentQuestionIndex(0);
+          setState('ready');
+          setCountdown(3);
+          const nextChallenge = challenges[currentChallengeIndex + 1];
+          setMemoryTimeLeft((nextChallenge.data.displayDuration || 5000) / 1000);
+        } else {
+          const totalTime = performance.now() - startTimeRef.current;
+          onComplete(newScore, totalTime);
+        }
       }
     }, 1500);
   };
@@ -136,7 +167,7 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
             className="flex flex-col items-center w-full h-full"
           >
             <div className="w-full flex justify-between items-center mb-6 border-b-2 border-zinc-800 pb-4">
-               <h2 className="font-mono text-xl uppercase tracking-widest text-zinc-400">Remember This</h2>
+               <h2 className="font-mono text-xl uppercase tracking-widest text-zinc-400">Challenge {currentChallengeIndex + 1} of {challenges.length}</h2>
                <div className="text-4xl font-black text-red-500 font-mono">0{memoryTimeLeft}.0</div>
             </div>
             <div className="flex-1 w-full bg-zinc-900 border-2 border-zinc-800 rounded flex items-center justify-center overflow-hidden">

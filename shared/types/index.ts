@@ -164,6 +164,10 @@ export interface TicTacToeContentData {
 }
 
 // Game slug union for type safety
+export interface QuestionsPerGameSettingsData {
+  questionsPerGame: number;
+}
+
 export type GameSlug = 
   | 'memory'
   | 'ai-or-human'

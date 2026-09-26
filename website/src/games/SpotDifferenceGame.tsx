@@ -41,7 +41,9 @@ function isPointInRegion(px: number, py: number, r: DifferenceRegion): boolean {
 export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: SpotDifferenceGameProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [content, setContent] = useState<GameContent | null>(null);
+  const [challenges, setChallenges] = useState<GameContent[]>([]);
+  const [currentChallengeIndex, setCurrentChallengeIndex] = useState(0);
+  const content = challenges[currentChallengeIndex] || null;
   const [timeLeft, setTimeLeft] = useState(60);
   const [foundIds, setFoundIds] = useState<Set<string>>(new Set());
   const [score, setScore] = useState(0);
@@ -74,15 +76,32 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
         .from('games').select('id').eq('slug', 'spot-difference').single();
       if (!gameData) { setError(true); setLoading(false); return; }
 
+      // Fetch Settings
+      const { data: settingsData } = await supabase
+        .from('game_content').select('data')
+        .eq('game_id', gameData.id).eq('content_type', 'spot-difference-settings').single();
+      const questionsPerGame = settingsData?.data?.questionsPerGame || 1;
+
       const { data: contentData } = await supabase
         .from('game_content').select('*')
-        .eq('game_id', gameData.id).eq('is_active', true);
+        .eq('game_id', gameData.id).eq('is_active', true)
+        .eq('content_type', 'spot-difference-challenge');
       if (!contentData || contentData.length === 0) { setError(true); setLoading(false); return; }
 
-      const chosen = contentData[Math.floor(Math.random() * contentData.length)];
-      setContent(chosen);
-      contentRef.current = chosen;
-      setTimeLeft(chosen.data?.timeLimit ?? 60);
+      // Shuffle & Select
+      const shuffled = [...contentData];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      
+      const selected = shuffled.slice(0, questionsPerGame);
+      if (selected.length === 0) { setError(true); setLoading(false); return; }
+
+      setChallenges(selected);
+      setCurrentChallengeIndex(0);
+      contentRef.current = selected[0];
+      setTimeLeft(selected[0].data?.timeLimit ?? 60);
       setLoading(false);
       startTimeRef.current = performance.now();
     }
@@ -92,10 +111,22 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
   useEffect(() => {
     if (loading || gameOver || error) return;
     if (timeLeft <= 0) {
-      gameOverRef.current = true;
-      setGameOver(true);
-      const elapsed = performance.now() - startTimeRef.current;
-      setTimeout(() => onComplete(scoreRef.current, elapsed), 2000);
+      if (currentChallengeIndex < challenges.length - 1) {
+        setTimeout(() => {
+          const nextIndex = currentChallengeIndex + 1;
+          setCurrentChallengeIndex(nextIndex);
+          contentRef.current = challenges[nextIndex];
+          setFoundIds(new Set());
+          setAllFound(false);
+          setWrongClicks([]);
+          setTimeLeft(challenges[nextIndex].data?.timeLimit ?? 60);
+        }, 2000);
+      } else {
+        gameOverRef.current = true;
+        setGameOver(true);
+        const elapsed = performance.now() - startTimeRef.current;
+        setTimeout(() => onComplete(scoreRef.current, elapsed), 2000);
+      }
       return;
     }
     const t = setTimeout(() => setTimeLeft(p => p - 1), 1000);
@@ -150,11 +181,24 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
         setTimeout(() => setFlashId(null), 700);
 
         if (newFound.size === regions.length) {
-          gameOverRef.current = true;
           setAllFound(true);
-          setGameOver(true);
-          const elapsed = performance.now() - startTimeRef.current;
-          setTimeout(() => onComplete(newScore, elapsed), 2000);
+          
+          if (currentChallengeIndex < challenges.length - 1) {
+            setTimeout(() => {
+              const nextIndex = currentChallengeIndex + 1;
+              setCurrentChallengeIndex(nextIndex);
+              contentRef.current = challenges[nextIndex];
+              setFoundIds(new Set());
+              setAllFound(false);
+              setWrongClicks([]);
+              setTimeLeft(challenges[nextIndex].data?.timeLimit ?? 60);
+            }, 2000);
+          } else {
+            gameOverRef.current = true;
+            setGameOver(true);
+            const elapsed = performance.now() - startTimeRef.current;
+            setTimeout(() => onComplete(newScore, elapsed), 2000);
+          }
         }
         break;
       }
@@ -230,7 +274,9 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
       {/* Header — compact */}
       <div className="flex items-center justify-between mb-1 md:mb-2 gap-2 flex-wrap shrink-0">
         <div>
-          <h2 className="text-base md:text-xl font-black uppercase text-red-400 tracking-widest">Spot the Difference</h2>
+          <h2 className="text-base md:text-xl font-black uppercase text-red-400 tracking-widest">
+            Spot the Difference <span className="text-white opacity-50 text-sm">({currentChallengeIndex + 1}/{challenges.length})</span>
+          </h2>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <span className="text-zinc-400 font-mono text-[10px] md:text-xs uppercase">{foundIds.size}/{regions.length} found</span>
             <div className="flex gap-1">

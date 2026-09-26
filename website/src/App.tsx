@@ -248,7 +248,7 @@ export default function App() {
               transition={{ delay: 0.1 }}
               className="absolute top-8 left-8 z-20"
             >
-              <img src="/PAPERLAB NAME LOGO WHITE.png" alt="PaperLab" className="h-8 md:h-12 object-contain opacity-80" />
+              <img src="/g4.png" alt="PaperLab" className="h-8 md:h-12 object-contain opacity-80" />
             </motion.div>
             
             <motion.div
