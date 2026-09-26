@@ -32,8 +32,9 @@ export default function App() {
   
   // Real state for metrics and players
   const [totalPlayers, setTotalPlayers] = useState(0);
-  const [players, setPlayers] = useState<any[]>([]); // Leaderboard rows
+  const [players, setPlayers] = useState<any[]>([]); // Leaderboard rows (all scores)
   const [participants, setParticipants] = useState<any[]>([]);
+  const [activeLbTab, setActiveLbTab] = useState<string>('overall');
 
   useEffect(() => {
     if (session) {
@@ -89,8 +90,9 @@ export default function App() {
         id,
         score,
         player_id,
+        game_id,
         players ( nickname, is_hidden ),
-        games ( name )
+        games ( id, name )
       `)
       .order('score', { ascending: false });
       
@@ -101,6 +103,7 @@ export default function App() {
         nickname: row.players?.nickname || 'Unknown Player',
         is_hidden: row.players?.is_hidden || false,
         score: row.score,
+        game_id: row.game_id,
         game: row.games?.name || 'Unknown Game'
       }));
       setPlayers(formattedPlayers);
@@ -114,8 +117,15 @@ export default function App() {
     fetchLeaderboard();
   };
 
-  const deleteScore = async (id: string) => {
-    await supabase.from('scores').delete().eq('id', id);
+  const deletePlayerScores = async (playerId: string, gameId?: string) => {
+    const confirmed = window.confirm(`Are you sure you want to delete scores for this player${gameId ? ' for this game' : ''}?`);
+    if (!confirmed) return;
+    
+    let query = supabase.from('scores').delete().eq('player_id', playerId);
+    if (gameId) {
+      query = query.eq('game_id', gameId);
+    }
+    await query;
     fetchLeaderboard();
   };
 
@@ -138,7 +148,30 @@ export default function App() {
     fetchLeaderboard();
   };
 
+  const getOverallLeaderboard = () => {
+    const playerTotals: Record<string, any> = {};
+    players.forEach(s => {
+      const pId = s.player_id;
+      if (!playerTotals[pId]) {
+        playerTotals[pId] = { player_id: pId, nickname: s.nickname, is_hidden: s.is_hidden, totalScore: 0, game: 'OVERALL' };
+      }
+      playerTotals[pId].totalScore += s.score;
+    });
+    return Object.values(playerTotals).sort((a, b) => b.totalScore - a.totalScore);
+  };
 
+  const getGameLeaderboard = (gameId: string) => {
+    const playerBestScores: Record<string, any> = {};
+    players.filter(s => s.game_id === gameId).forEach(s => {
+      const pId = s.player_id;
+      if (!playerBestScores[pId]) {
+        playerBestScores[pId] = { player_id: pId, nickname: s.nickname, is_hidden: s.is_hidden, score: s.score, game: s.game };
+      } else if (s.score > playerBestScores[pId].score) {
+        playerBestScores[pId].score = s.score;
+      }
+    });
+    return Object.values(playerBestScores).sort((a, b) => b.score - a.score);
+  };
 
   if (!session) {
     return (
@@ -314,11 +347,29 @@ export default function App() {
                 <Trash2 size={16} /> CLEAR ALL LEADERBOARDS
               </button>
             </div>
-            
+            <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-800 pb-4">
+              <button 
+                onClick={() => setActiveLbTab('overall')}
+                className={`px-6 py-3 font-bold uppercase tracking-widest text-sm transition-colors ${activeLbTab === 'overall' ? 'bg-lime-400 text-black' : 'bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800'}`}
+              >
+                Overall
+              </button>
+              {games.map(g => (
+                <button 
+                  key={g.id}
+                  onClick={() => setActiveLbTab(g.id)}
+                  className={`px-6 py-3 font-bold uppercase tracking-widest text-sm transition-colors ${activeLbTab === g.id ? 'bg-lime-400 text-black' : 'bg-zinc-900 text-zinc-400 hover:text-white hover:bg-zinc-800'}`}
+                >
+                  {g.name}
+                </button>
+              ))}
+            </div>
+
             <div className="admin-card bg-gray-900/50 overflow-x-auto w-full max-w-full">
               <table className="w-full text-left font-mono text-sm min-w-[600px]">
                 <thead className="text-muted border-b border-gray-800">
                   <tr>
+                    <th className="pb-4 font-normal">RANK</th>
                     <th className="pb-4 font-normal">PLAYER NICKNAME</th>
                     <th className="pb-4 font-normal">GAME MODULE</th>
                     <th className="pb-4 font-normal">SCORE</th>
@@ -326,13 +377,14 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {players.map(p => (
-                    <tr key={p.id} className={`border-b border-gray-800/50 hover:bg-surface transition-colors ${p.is_hidden ? 'opacity-50' : ''}`}>
+                  {(activeLbTab === 'overall' ? getOverallLeaderboard() : getGameLeaderboard(activeLbTab)).map((p, idx) => (
+                    <tr key={p.player_id} className={`border-b border-gray-800/50 hover:bg-surface transition-colors ${p.is_hidden ? 'opacity-50' : ''}`}>
+                      <td className="py-4 font-bold text-zinc-500">#{idx + 1}</td>
                       <td className="py-4 font-bold text-white flex items-center gap-2">
                         {p.nickname} {p.is_hidden && <span className="px-2 py-1 bg-zinc-800 text-xs rounded text-zinc-400">HIDDEN</span>}
                       </td>
                       <td className="py-4 text-muted">{p.game}</td>
-                      <td className="py-4 text-primary text-xl font-black">{p.score}</td>
+                      <td className="py-4 text-primary text-xl font-black">{activeLbTab === 'overall' ? p.totalScore : p.score}</td>
                       <td className="py-4 flex justify-end gap-3 text-muted">
                         <button 
                           className="hover:text-cyan-400" 
@@ -343,8 +395,8 @@ export default function App() {
                         </button>
                         <button 
                           className="hover:text-danger" 
-                          title="Delete Score"
-                          onClick={() => deleteScore(p.id)}
+                          title="Delete Scores"
+                          onClick={() => deletePlayerScores(p.player_id, activeLbTab === 'overall' ? undefined : activeLbTab)}
                         >
                           <Trash2 size={16} />
                         </button>
