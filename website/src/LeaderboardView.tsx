@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, ChevronLeft } from 'lucide-react';
+import { Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from './supabase';
 import type { Game } from '../../shared/types';
 
@@ -20,6 +20,14 @@ export default function LeaderboardView({ games, onBack }: LeaderboardViewProps)
   const [activeTab, setActiveTab] = useState<string>('overall');
   const [scores, setScores] = useState<ScoreEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    if (tabsRef.current) {
+      const amount = 250;
+      tabsRef.current.scrollBy({ left: direction === 'left' ? -amount : amount, behavior: 'smooth' });
+    }
+  };
 
   useEffect(() => {
     async function fetchScores() {
@@ -126,23 +134,50 @@ export default function LeaderboardView({ games, onBack }: LeaderboardViewProps)
         <div className="w-16 md:w-24"></div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-4 mb-4 scrollbar-hide">
+      {/* Tabs with scroll arrows */}
+      <div className="flex items-center gap-2 mb-4 w-full">
         <button 
-          onClick={() => setActiveTab('overall')}
-          className={`shrink-0 px-6 py-3 font-bold uppercase tracking-widest transition-colors border-b-2 ${activeTab === 'overall' ? 'border-lime-400 text-lime-400 bg-lime-400/10' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
+          onClick={() => scrollTabs('left')} 
+          className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 bg-zinc-900 border border-zinc-800 rounded transition-colors"
         >
-          Overall Hero
+          <ChevronLeft size={24} />
         </button>
-        {games.filter(g => g.enabled).map(g => (
+        
+        <div 
+          ref={tabsRef}
+          className="flex-1 flex gap-2 overflow-x-auto pb-2 scrollbar-hide scroll-smooth"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          <style>{`
+            .scrollbar-hide::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
+          
           <button 
-            key={g.id}
-            onClick={() => setActiveTab(g.id)}
-            className={`shrink-0 px-6 py-3 font-bold uppercase tracking-widest transition-colors border-b-2 ${activeTab === g.id ? 'border-cyan-400 text-cyan-400 bg-cyan-400/10' : 'border-transparent text-zinc-500 hover:text-zinc-300'}`}
+            onClick={() => setActiveTab('overall')}
+            className={`shrink-0 px-6 py-3 font-bold uppercase tracking-widest transition-colors border-b-2 ${activeTab === 'overall' ? 'border-lime-400 text-lime-400 bg-lime-400/10' : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}
           >
-            {g.name}
+            Overall Hero
           </button>
-        ))}
+          
+          {games.filter(g => g.enabled || scores.some(s => s.game_id === g.id)).map(g => (
+            <button 
+              key={g.id}
+              onClick={() => setActiveTab(g.id)}
+              className={`shrink-0 px-6 py-3 font-bold uppercase tracking-widest transition-colors border-b-2 ${activeTab === g.id ? 'border-cyan-400 text-cyan-400 bg-cyan-400/10' : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}
+            >
+              {g.name}
+            </button>
+          ))}
+        </div>
+
+        <button 
+          onClick={() => scrollTabs('right')} 
+          className="p-2 text-zinc-500 hover:text-white hover:bg-zinc-800 bg-zinc-900 border border-zinc-800 rounded transition-colors"
+        >
+          <ChevronRight size={24} />
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto pr-2 pb-12">

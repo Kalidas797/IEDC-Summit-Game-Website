@@ -34,6 +34,9 @@ export default function App() {
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [players, setPlayers] = useState<any[]>([]); // Leaderboard rows (all scores)
   const [participants, setParticipants] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [awardPointsPlayer, setAwardPointsPlayer] = useState<any>(null);
+  const [awardPointsForm, setAwardPointsForm] = useState({ gameId: '', newGameName: '', score: 0 });
   const [activeLbTab, setActiveLbTab] = useState<string>('overall');
 
   useEffect(() => {
@@ -146,6 +149,51 @@ export default function App() {
     await supabase.from('players').delete().eq('id', playerId);
     fetchParticipants();
     fetchLeaderboard();
+  };
+
+  const awardPoints = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!awardPointsPlayer || !awardPointsForm.gameId || awardPointsForm.score === 0) return;
+    
+    let targetGameId = awardPointsForm.gameId;
+
+    if (targetGameId === 'NEW') {
+      if (!awardPointsForm.newGameName.trim()) {
+        window.alert('Please enter a name for the new game.');
+        return;
+      }
+      const slug = awardPointsForm.newGameName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      
+      const { data: newGame, error } = await supabase.from('games').insert({
+        slug,
+        name: awardPointsForm.newGameName.trim(),
+        description: 'Custom event game (Manual Points)',
+        enabled: false,
+        display_order: 99
+      }).select().single();
+
+      if (error || !newGame) {
+        console.error("Error creating new game:", error);
+        window.alert('Failed to create new game.');
+        return;
+      }
+      targetGameId = newGame.id;
+      // Refresh the games list so it shows up later
+      fetchGames();
+    }
+
+    await supabase.from('scores').insert({
+      player_id: awardPointsPlayer.id,
+      game_id: targetGameId,
+      score: awardPointsForm.score,
+      time_ms: 0,
+      metadata: { note: 'Manually awarded by Admin' }
+    });
+    
+    setAwardPointsPlayer(null);
+    setAwardPointsForm({ gameId: '', newGameName: '', score: 0 });
+    fetchLeaderboard();
+    window.alert('Points awarded successfully!');
   };
 
   const getOverallLeaderboard = () => {
@@ -413,6 +461,13 @@ export default function App() {
           <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-20}} className="flex flex-col gap-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold uppercase tracking-wider">All Participants</h2>
+              <input 
+                type="text" 
+                placeholder="Search by name or email..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="px-4 py-2 bg-black/50 border border-white/10 text-white font-mono rounded-lg outline-none focus:border-cyan-400 w-64 text-sm"
+              />
             </div>
             
             <div className="admin-card bg-gray-900/50 overflow-x-auto w-full max-w-full">
@@ -426,7 +481,10 @@ export default function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {participants.map(p => (
+                  {participants.filter(p => 
+                    p.nickname.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                    (p.email && p.email.toLowerCase().includes(searchQuery.toLowerCase()))
+                  ).map(p => (
                     <tr key={p.id} className={`border-b border-gray-800/50 hover:bg-surface transition-colors ${p.is_hidden ? 'opacity-50' : ''}`}>
                       <td className="py-4 font-bold text-white flex items-center gap-2">
                         {p.nickname} {p.is_hidden && <span className="px-2 py-1 bg-zinc-800 text-xs rounded text-zinc-400">HIDDEN</span>}
@@ -434,6 +492,12 @@ export default function App() {
                       <td className="py-4 text-muted">{p.email || 'N/A'}</td>
                       <td className="py-4 text-muted">{p.college_name || 'N/A'}</td>
                       <td className="py-4 flex justify-end gap-3 text-muted">
+                        <button 
+                          className="px-3 py-1 bg-lime-400/10 text-lime-400 hover:bg-lime-400/20 rounded font-bold text-xs uppercase"
+                          onClick={() => setAwardPointsPlayer(p)}
+                        >
+                          + Award Pts
+                        </button>
                         <button 
                           className="hover:text-cyan-400" 
                           title={p.is_hidden ? "Show Player on Leaderboards" : "Hide Player from Leaderboards"}
@@ -457,6 +521,66 @@ export default function App() {
           </motion.div>
         )}
         </AnimatePresence>
+
+        {/* Award Points Modal */}
+        {awardPointsPlayer && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="admin-card max-w-md w-full relative">
+              <button 
+                onClick={() => setAwardPointsPlayer(null)} 
+                className="absolute top-4 right-4 text-zinc-500 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+              <h2 className="text-xl font-bold uppercase mb-2">Award Points</h2>
+              <p className="text-muted text-sm mb-6">Awarding points to <span className="text-white font-bold">{awardPointsPlayer.nickname}</span></p>
+              
+              <form onSubmit={awardPoints} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono uppercase text-zinc-400">Select Game</label>
+                  <select 
+                    required
+                    value={awardPointsForm.gameId}
+                    onChange={e => setAwardPointsForm({...awardPointsForm, gameId: e.target.value})}
+                    className="p-3 bg-black/50 border border-white/10 text-white font-mono rounded-lg outline-none"
+                  >
+                    <option value="">-- Choose Game --</option>
+                    {games.map(g => (
+                      <option key={g.id} value={g.id}>{g.name}</option>
+                    ))}
+                    <option value="NEW" className="font-bold text-lime-400">+ Create New Game...</option>
+                  </select>
+                </div>
+                
+                {awardPointsForm.gameId === 'NEW' && (
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-mono uppercase text-zinc-400 text-lime-400">New Game Name</label>
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="e.g. Treasure Hunt Bonus"
+                      value={awardPointsForm.newGameName}
+                      onChange={e => setAwardPointsForm({...awardPointsForm, newGameName: e.target.value})}
+                      className="p-3 bg-black/50 border border-lime-400/50 text-white font-mono rounded-lg outline-none focus:border-lime-400"
+                    />
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-mono uppercase text-zinc-400">Points to Award</label>
+                  <input 
+                    type="number" 
+                    required
+                    value={awardPointsForm.score}
+                    onChange={e => setAwardPointsForm({...awardPointsForm, score: Number(e.target.value)})}
+                    className="p-3 bg-black/50 border border-white/10 text-white font-mono rounded-lg outline-none"
+                  />
+                </div>
+                <button type="submit" className="btn-primary mt-4 py-3">Award Points</button>
+              </form>
+            </motion.div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Sparkles, User, Crosshair, Zap, Brain, PenTool, LayoutDashboard, ArrowRight, Trophy } from 'lucide-react';
+import { Play, Sparkles, User, Crosshair, Zap, Brain, PenTool, LayoutDashboard, Palette, Eye, ArrowRight, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import GameEngine from './games/GameEngine';
 import { supabase } from './supabase';
@@ -18,7 +18,9 @@ const gameInfoMap: Record<string, any> = {
   'doodle': { time: '2m', difficulty: 'EASY', icon: PenTool, color: 'text-pink-400', bg: 'bg-pink-400/10', border: 'border-pink-400/30' },
   'what-changed': { time: '45s', difficulty: 'MEDIUM', icon: Crosshair, color: 'text-orange-400', bg: 'bg-orange-400/10', border: 'border-orange-400/30' },
   'crossword': { time: '3m', difficulty: 'MEDIUM', icon: LayoutDashboard, color: 'text-emerald-400', bg: 'bg-emerald-400/10', border: 'border-emerald-400/30' },
-  'tic-tac-toe': { time: '2m', difficulty: 'EASY', icon: LayoutDashboard, color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/30' }
+  'tic-tac-toe': { time: '2m', difficulty: 'EASY', icon: LayoutDashboard, color: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/30' },
+  'color-word-challenge': { time: '30s', difficulty: 'HARD', icon: Palette, color: 'text-rose-400', bg: 'bg-rose-400/10', border: 'border-rose-400/30' },
+  'sequence-memory': { time: '1m', difficulty: 'MEDIUM', icon: Eye, color: 'text-cyan-400', bg: 'bg-cyan-400/10', border: 'border-cyan-400/30' }
 };
 
 export default function App() {

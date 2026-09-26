@@ -173,4 +173,6 @@ export type GameSlug =
   | 'doodle'
   | 'crossword'
   | 'reaction'
-  | 'tic-tac-toe';
+  | 'tic-tac-toe'
+  | 'color-word-challenge'
+  | 'sequence-memory';

@@ -10,6 +10,8 @@ import SpotDifferenceGame from './SpotDifferenceGame';
 import DoodleGame from './DoodleGame';
 import HiddenWordsGame from './HiddenWordsGame';
 import WhatChangedGame from './WhatChangedGame';
+import ColorWordGame from './ColorWordGame';
+import SequenceMemoryGame from './SequenceMemoryGame';
 
 interface GameEngineProps {
   gameId: string;
@@ -163,8 +165,14 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
             {gameId === 'what-changed' && (
                <WhatChangedGame onComplete={finishGame} onExit={onExit} />
             )}
+            {gameId === 'color-word-challenge' && (
+               <ColorWordGame onUpdateScore={handleScoreUpdate} onComplete={finishGame} />
+            )}
+            {gameId === 'sequence-memory' && (
+               <SequenceMemoryGame onUpdateScore={handleScoreUpdate} onComplete={finishGame} />
+            )}
             {/* Fallback for unimplemented games */}
-            {gameId !== 'reaction' && gameId !== 'memory' && gameId !== 'tic-tac-toe' && gameId !== 'ai-or-human' && gameId !== 'spot-difference' && gameId !== 'doodle' && gameId !== 'crossword' && gameId !== 'what-changed' && (
+            {gameId !== 'reaction' && gameId !== 'memory' && gameId !== 'tic-tac-toe' && gameId !== 'ai-or-human' && gameId !== 'spot-difference' && gameId !== 'doodle' && gameId !== 'crossword' && gameId !== 'what-changed' && gameId !== 'color-word-challenge' && gameId !== 'sequence-memory' && (
                <div className="flex-1 flex flex-col items-center justify-center">
                  <p className="text-red-400 font-mono uppercase tracking-widest text-xl mb-4">Module Not Found</p>
                  <button onClick={onExit} className="btn-secondary">Return to Hub</button>

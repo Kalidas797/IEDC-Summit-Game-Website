@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabase';
-import { Brain, User, Crosshair, PenTool, LayoutDashboard, Zap, Hash, Eye } from 'lucide-react';
+import { Brain, User, Crosshair, PenTool, LayoutDashboard, Zap, Hash, Eye, Palette } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Game, GameSlug } from '../../shared/types';
 
@@ -11,6 +11,8 @@ import DoodleEditor from './editors/DoodleEditor';
 import HiddenWordsEditor from './editors/HiddenWordsEditor';
 import ReactionEditor from './editors/ReactionEditor';
 import TicTacToeEditor from './editors/TicTacToeEditor';
+import ColorWordEditor from './editors/ColorWordEditor';
+import SequenceMemoryEditor from './editors/SequenceMemoryEditor';
 
 const gameIcons: Record<string, React.ElementType> = {
   'memory': Brain,
@@ -21,6 +23,8 @@ const gameIcons: Record<string, React.ElementType> = {
   'crossword': LayoutDashboard,
   'reaction': Zap,
   'tic-tac-toe': Hash,
+  'color-word-challenge': Palette,
+  'sequence-memory': Eye,
 };
 
 const gameColors: Record<string, string> = {
@@ -32,6 +36,8 @@ const gameColors: Record<string, string> = {
   'crossword': 'text-emerald-400',
   'reaction': 'text-yellow-400',
   'tic-tac-toe': 'text-cyan-400',
+  'color-word-challenge': 'text-rose-400',
+  'sequence-memory': 'text-cyan-400',
 };
 
 export default function ContentEditor() {
@@ -72,6 +78,10 @@ export default function ContentEditor() {
         return <ReactionEditor gameId={activeGameId} />;
       case 'tic-tac-toe':
         return <TicTacToeEditor gameId={activeGameId} />;
+      case 'color-word-challenge':
+        return <ColorWordEditor gameId={activeGameId} />;
+      case 'sequence-memory':
+        return <SequenceMemoryEditor gameId={activeGameId} />;
       default:
         return <p className="text-zinc-500 font-mono">Editor not available for this game</p>;
     }
