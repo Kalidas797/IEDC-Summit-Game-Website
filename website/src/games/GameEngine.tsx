@@ -40,7 +40,9 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
   const startGameSession = async () => {
     let deviceId = localStorage.getItem('paperlab_device_id');
     if (!deviceId) {
-      deviceId = crypto.randomUUID();
+      deviceId = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' 
+        ? crypto.randomUUID() 
+        : 'device-' + Date.now() + '-' + Math.random().toString(36).substring(2);
       localStorage.setItem('paperlab_device_id', deviceId);
     }
     
@@ -83,8 +85,8 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
         player_id: playerId,
         game_id: dbGameId,
         session_id: sessionId,
-        score: finalScore,
-        time_ms: finalTimeMs
+        score: Math.floor(finalScore),
+        time_ms: Math.floor(finalTimeMs)
       }]);
       if (error) console.error("Error saving score:", error);
     }

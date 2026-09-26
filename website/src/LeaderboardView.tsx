@@ -29,10 +29,11 @@ export default function LeaderboardView({ games, onBack }: LeaderboardViewProps)
           player_id,
           game_id,
           score,
-          players ( nickname )
+          players ( nickname, is_hidden )
         `);
       if (data) {
-        setScores(data as any);
+        const validScores = data.filter((s: any) => !s.players?.is_hidden);
+        setScores(validScores as any);
       }
       setLoading(false);
     }

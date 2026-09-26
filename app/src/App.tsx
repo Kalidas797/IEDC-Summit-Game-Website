@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, LogIn, Activity, Settings, Users, Database, Edit, Trash2, Power, Menu, X, Trophy } from 'lucide-react';
+import { Lock, LogIn, Activity, Settings, Users, Database, Trash2, Power, Menu, X, Trophy, Eye, EyeOff } from 'lucide-react';
 import { supabase } from './supabase';
 import type { Game } from '../../shared/types';
 import ContentEditor from './ContentEditor';
@@ -33,7 +33,7 @@ export default function App() {
   // Real state for metrics and players
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [players, setPlayers] = useState<any[]>([]); // Leaderboard rows
-
+  const [participants, setParticipants] = useState<any[]>([]);
 
   useEffect(() => {
     if (session) {
@@ -78,7 +78,8 @@ export default function App() {
   };
 
   const fetchParticipants = async () => {
-    //
+    const { data } = await supabase.from('players').select('*').order('created_at', { ascending: false });
+    if (data) setParticipants(data);
   };
 
   const fetchLeaderboard = async () => {
@@ -87,7 +88,8 @@ export default function App() {
       .select(`
         id,
         score,
-        players ( nickname ),
+        player_id,
+        players ( nickname, is_hidden ),
         games ( name )
       `)
       .order('score', { ascending: false });
@@ -95,7 +97,9 @@ export default function App() {
     if (data) {
       const formattedPlayers = data.map((row: any) => ({
         id: row.id,
+        player_id: row.player_id,
         nickname: row.players?.nickname || 'Unknown Player',
+        is_hidden: row.players?.is_hidden || false,
         score: row.score,
         game: row.games?.name || 'Unknown Game'
       }));
@@ -118,6 +122,20 @@ export default function App() {
   const toggleGameStatus = async (gameId: string, currentStatus: boolean) => {
     await supabase.from('games').update({ enabled: !currentStatus }).eq('id', gameId);
     fetchGames();
+  };
+
+  const toggleHidePlayer = async (playerId: string, currentHidden: boolean) => {
+    await supabase.from('players').update({ is_hidden: !currentHidden }).eq('id', playerId);
+    fetchParticipants();
+    fetchLeaderboard();
+  };
+
+  const deletePlayer = async (playerId: string) => {
+    const confirmed = window.confirm("Are you sure you want to delete this player and ALL their scores? This cannot be undone.");
+    if (!confirmed) return;
+    await supabase.from('players').delete().eq('id', playerId);
+    fetchParticipants();
+    fetchLeaderboard();
   };
 
 
@@ -309,16 +327,72 @@ export default function App() {
                 </thead>
                 <tbody>
                   {players.map(p => (
-                    <tr key={p.id} className="border-b border-gray-800/50 hover:bg-surface transition-colors">
-                      <td className="py-4 font-bold text-white">{p.nickname}</td>
+                    <tr key={p.id} className={`border-b border-gray-800/50 hover:bg-surface transition-colors ${p.is_hidden ? 'opacity-50' : ''}`}>
+                      <td className="py-4 font-bold text-white flex items-center gap-2">
+                        {p.nickname} {p.is_hidden && <span className="px-2 py-1 bg-zinc-800 text-xs rounded text-zinc-400">HIDDEN</span>}
+                      </td>
                       <td className="py-4 text-muted">{p.game}</td>
                       <td className="py-4 text-primary text-xl font-black">{p.score}</td>
                       <td className="py-4 flex justify-end gap-3 text-muted">
-                        <button className="hover:text-cyan-400" title="Edit Score"><Edit size={16} /></button>
+                        <button 
+                          className="hover:text-cyan-400" 
+                          title={p.is_hidden ? "Show Player" : "Hide Player"}
+                          onClick={() => toggleHidePlayer(p.player_id, p.is_hidden)}
+                        >
+                          {p.is_hidden ? <Eye size={16} /> : <EyeOff size={16} />}
+                        </button>
                         <button 
                           className="hover:text-danger" 
-                          title="Delete Rank"
+                          title="Delete Score"
                           onClick={() => deleteScore(p.id)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
+        )}
+
+        {activeTab === 'participants' && (
+          <motion.div initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-20}} className="flex flex-col gap-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold uppercase tracking-wider">All Participants</h2>
+            </div>
+            
+            <div className="admin-card bg-gray-900/50 overflow-x-auto w-full max-w-full">
+              <table className="w-full text-left font-mono text-sm min-w-[600px]">
+                <thead className="text-muted border-b border-gray-800">
+                  <tr>
+                    <th className="pb-4 font-normal">NICKNAME</th>
+                    <th className="pb-4 font-normal">EMAIL</th>
+                    <th className="pb-4 font-normal">COLLEGE</th>
+                    <th className="pb-4 font-normal text-right">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {participants.map(p => (
+                    <tr key={p.id} className={`border-b border-gray-800/50 hover:bg-surface transition-colors ${p.is_hidden ? 'opacity-50' : ''}`}>
+                      <td className="py-4 font-bold text-white flex items-center gap-2">
+                        {p.nickname} {p.is_hidden && <span className="px-2 py-1 bg-zinc-800 text-xs rounded text-zinc-400">HIDDEN</span>}
+                      </td>
+                      <td className="py-4 text-muted">{p.email || 'N/A'}</td>
+                      <td className="py-4 text-muted">{p.college_name || 'N/A'}</td>
+                      <td className="py-4 flex justify-end gap-3 text-muted">
+                        <button 
+                          className="hover:text-cyan-400" 
+                          title={p.is_hidden ? "Show Player on Leaderboards" : "Hide Player from Leaderboards"}
+                          onClick={() => toggleHidePlayer(p.id, p.is_hidden)}
+                        >
+                          {p.is_hidden ? <Eye size={16} /> : <EyeOff size={16} />}
+                        </button>
+                        <button 
+                          className="hover:text-danger" 
+                          title="Delete Player & All Scores"
+                          onClick={() => deletePlayer(p.id)}
                         >
                           <Trash2 size={16} />
                         </button>

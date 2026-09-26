@@ -61,6 +61,7 @@ export default function App() {
   const [nicknameInput, setNicknameInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
   const [collegeInput, setCollegeInput] = useState('');
+  const [regStep, setRegStep] = useState<1 | 2>(1);
   const [isRegistering, setIsRegistering] = useState(false);
   const [pendingRandomGame, setPendingRandomGame] = useState(false);
   const [games, setGames] = React.useState<Game[]>([]);
@@ -89,6 +90,7 @@ export default function App() {
     if (playerId) {
       setView('selection');
     } else {
+      setRegStep(1);
       setView('registration');
     }
   };
@@ -105,27 +107,53 @@ export default function App() {
       startGame(randomGame.slug);
     } else {
       setPendingRandomGame(true);
+      setRegStep(1);
       setView('registration');
     }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nicknameInput.trim() || !emailInput.trim() || !collegeInput.trim()) return;
-    
-    setIsRegistering(true);
-    try {
-      // 1. Check if user with this email already exists
-      const { data: existingUser } = await supabase
-        .from('players')
-        .select('*')
-        .eq('email', emailInput.trim().toLowerCase())
-        .single();
+    if (regStep === 1) {
+      if (!emailInput.trim()) return;
+      setIsRegistering(true);
+      try {
+        const { data: existingUser } = await supabase
+          .from('players')
+          .select('*')
+          .eq('email', emailInput.trim().toLowerCase())
+          .maybeSingle();
 
-      let finalPlayer = existingUser;
-
-      if (!existingUser) {
-        // 2. If not, insert
+        if (existingUser) {
+          setPlayerId(existingUser.id);
+          localStorage.setItem('paperlab_player_id', existingUser.id);
+          
+          if (pendingRandomGame) {
+            const enabledGames = games.filter(g => g.enabled);
+            if (enabledGames.length > 0) {
+              const randomGame = enabledGames[Math.floor(Math.random() * enabledGames.length)];
+              startGame(randomGame.slug);
+            } else {
+              setView('selection');
+            }
+            setPendingRandomGame(false);
+          } else {
+            setView('selection');
+          }
+        } else {
+          setRegStep(2);
+        }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        console.error("Network/Unknown Error:", err);
+        alert(`Error: ${err.message || 'Unknown error'}`);
+      } finally {
+        setIsRegistering(false);
+      }
+    } else {
+      if (!nicknameInput.trim() || !collegeInput.trim()) return;
+      setIsRegistering(true);
+      try {
         const { data: newUser, error } = await supabase
           .from('players')
           .insert([{ 
@@ -142,32 +170,31 @@ export default function App() {
           setIsRegistering(false);
           return;
         }
-        finalPlayer = newUser;
-      }
         
-      if (finalPlayer) {
-        setPlayerId(finalPlayer.id);
-        localStorage.setItem('paperlab_player_id', finalPlayer.id);
-        
-        if (pendingRandomGame) {
-          const enabledGames = games.filter(g => g.enabled);
-          if (enabledGames.length > 0) {
-            const randomGame = enabledGames[Math.floor(Math.random() * enabledGames.length)];
-            startGame(randomGame.slug);
+        if (newUser) {
+          setPlayerId(newUser.id);
+          localStorage.setItem('paperlab_player_id', newUser.id);
+          
+          if (pendingRandomGame) {
+            const enabledGames = games.filter(g => g.enabled);
+            if (enabledGames.length > 0) {
+              const randomGame = enabledGames[Math.floor(Math.random() * enabledGames.length)];
+              startGame(randomGame.slug);
+            } else {
+              setView('selection');
+            }
+            setPendingRandomGame(false);
           } else {
             setView('selection');
           }
-          setPendingRandomGame(false);
-        } else {
-          setView('selection');
         }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
+        console.error("Network/Unknown Error:", err);
+        alert(`Error: ${err.message || 'Unknown error'}`);
+      } finally {
+        setIsRegistering(false);
       }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      console.error("Network/Unknown Error:", err);
-      alert(`Error: ${err.message || 'Unknown error'}`);
-    } finally {
-      setIsRegistering(false);
     }
   };
 
@@ -256,48 +283,60 @@ export default function App() {
           >
             <div className="w-full max-w-md">
               <h2 className="text-4xl font-black uppercase mb-2">Identify Yourself</h2>
-              <p className="text-zinc-400 font-mono mb-8 uppercase text-sm tracking-widest">Enter a nickname for the leaderboard</p>
+              <p className="text-zinc-400 font-mono mb-8 uppercase text-sm tracking-widest">
+                {regStep === 1 ? 'Enter your email to continue' : 'Enter a nickname for the leaderboard'}
+              </p>
               
               <form onSubmit={handleRegister} className="flex flex-col gap-4">
-                <input 
-                  type="text" 
-                  value={nicknameInput}
-                  onChange={(e) => setNicknameInput(e.target.value.toUpperCase())}
-                  placeholder="NICKNAME"
-                  maxLength={15}
-                  required
-                  className="bg-zinc-900 border-2 border-zinc-800 focus:border-lime-400 focus:outline-none p-4 text-xl font-black uppercase text-center tracking-widest transition-colors w-full"
-                />
-                <input 
-                  type="email" 
-                  value={emailInput}
-                  onChange={(e) => setEmailInput(e.target.value)}
-                  placeholder="EMAIL ADDRESS"
-                  required
-                  className="bg-zinc-900 border-2 border-zinc-800 focus:border-lime-400 focus:outline-none p-4 text-xl font-bold text-center tracking-widest transition-colors w-full"
-                />
-                <input 
-                  type="text" 
-                  value={collegeInput}
-                  onChange={(e) => setCollegeInput(e.target.value.toUpperCase())}
-                  placeholder="COLLEGE NAME"
-                  required
-                  className="bg-zinc-900 border-2 border-zinc-800 focus:border-lime-400 focus:outline-none p-4 text-xl font-bold uppercase text-center tracking-widest transition-colors w-full"
-                />
+                {regStep === 1 && (
+                  <input 
+                    type="email" 
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="EMAIL ADDRESS"
+                    required
+                    className="bg-zinc-900 border-2 border-zinc-800 focus:border-lime-400 focus:outline-none p-4 text-xl font-bold text-center tracking-widest transition-colors w-full"
+                  />
+                )}
+
+                {regStep === 2 && (
+                  <>
+                    <input 
+                      type="text" 
+                      value={nicknameInput}
+                      onChange={(e) => setNicknameInput(e.target.value.toUpperCase())}
+                      placeholder="NICKNAME"
+                      maxLength={15}
+                      required
+                      className="bg-zinc-900 border-2 border-zinc-800 focus:border-lime-400 focus:outline-none p-4 text-xl font-black uppercase text-center tracking-widest transition-colors w-full"
+                    />
+                    <input 
+                      type="text" 
+                      value={collegeInput}
+                      onChange={(e) => setCollegeInput(e.target.value.toUpperCase())}
+                      placeholder="COLLEGE NAME"
+                      required
+                      className="bg-zinc-900 border-2 border-zinc-800 focus:border-lime-400 focus:outline-none p-4 text-xl font-bold uppercase text-center tracking-widest transition-colors w-full"
+                    />
+                  </>
+                )}
                 
                 <button 
                   type="submit" 
-                  disabled={isRegistering || !nicknameInput.trim()}
+                  disabled={isRegistering || (regStep === 1 ? !emailInput.trim() : !nicknameInput.trim())}
                   className="bg-lime-400 hover:bg-lime-300 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 font-black uppercase tracking-widest text-xl px-12 py-6 flex justify-center items-center gap-3 transition-colors w-full"
                 >
-                  {isRegistering ? 'CONNECTING...' : 'INITIALIZE'} <ArrowRight size={24} />
+                  {isRegistering ? 'CONNECTING...' : 'CONTINUE'} <ArrowRight size={24} />
                 </button>
                 <button 
                   type="button"
-                  onClick={() => setView('attract')}
+                  onClick={() => {
+                    if (regStep === 2) setRegStep(1);
+                    else setView('attract');
+                  }}
                   className="mt-4 text-zinc-500 hover:text-white font-mono uppercase tracking-widest text-sm"
                 >
-                  [ CANCEL ]
+                  [ {regStep === 2 ? 'BACK' : 'CANCEL'} ]
                 </button>
               </form>
             </div>
