@@ -87,7 +87,7 @@ export default function QuestionsPerGameEditor({ gameId, settingsContentType, ac
 
             <div className="h-12 w-px bg-white/10 hidden sm:block"></div>
 
-            <div className="flex-1 w-full max-w-xs">
+            <div className="flex-1 w-full max-w-sm">
               <label className="flex flex-col">
                 <span className="text-xs uppercase tracking-widest text-zinc-500 font-bold mb-1">{label}</span>
                 <div className="flex gap-2">
@@ -96,12 +96,12 @@ export default function QuestionsPerGameEditor({ gameId, settingsContentType, ac
                     min="1"
                     value={questionsPerGame}
                     onChange={(e) => setQuestionsPerGame(parseInt(e.target.value) || 1)}
-                    className="flex-1 p-3 bg-black border border-white/20 text-white font-mono rounded-lg outline-none focus:border-cyan-400 text-xl font-bold" 
+                    className="flex-1 min-w-0 p-3 bg-black border border-white/20 text-white font-mono rounded-lg outline-none focus:border-cyan-400 text-xl font-bold" 
                   />
                   <button 
                     onClick={handleSave} 
                     disabled={isSaving}
-                    className="btn-primary px-6"
+                    className="btn-primary px-6 shrink-0 whitespace-nowrap h-full"
                   >
                     {isSaving ? 'Saving...' : 'Save'}
                   </button>

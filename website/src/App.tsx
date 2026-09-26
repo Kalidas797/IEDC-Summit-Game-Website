@@ -28,8 +28,12 @@ const gameInfoMap: Record<string, any> = {
 export default function App() {
   const [view, setViewInternal] = useState<ViewState>('attract');
   
-  const setView = (newView: typeof view) => {
-    window.history.pushState({ view: newView }, '', `#${newView}`);
+  const setView = (newView: typeof view, replace: boolean = false) => {
+    if (replace) {
+      window.history.replaceState({ view: newView }, '', `#${newView}`);
+    } else {
+      window.history.pushState({ view: newView }, '', `#${newView}`);
+    }
     setViewInternal(newView);
     if (newView === 'attract') {
       setPlayerId(null);
@@ -223,7 +227,8 @@ export default function App() {
   const handleGameComplete = (score: number, timeMs: number) => {
     console.log('Game completed:', { score, timeMs });
     // Handled by GameEngine now
-    setView('selection');
+    // Replace state so completing a game doesn't add to the back-button stack
+    setView('selection', true);
   };
 
   return (
@@ -248,7 +253,7 @@ export default function App() {
               transition={{ delay: 0.1 }}
               className="absolute top-8 left-8 z-20"
             >
-              <img src="/g4.png" alt="PaperLab" className="h-8 md:h-12 object-contain opacity-80" />
+              <img src="/PAPERLAB NAME LOGO WHITE.png" alt="PaperLab" className="h-8 md:h-12 object-contain opacity-80" />
             </motion.div>
             
             <motion.div
@@ -387,7 +392,7 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     if (regStep === 2) setRegStep(1);
-                    else setView('attract');
+                    else window.history.back();
                   }}
                   className="mt-4 text-zinc-500 hover:text-white font-mono uppercase tracking-widest text-sm"
                 >
@@ -413,7 +418,7 @@ export default function App() {
                 <p className="text-cyan-400 font-mono tracking-widest uppercase text-sm">Select a module to begin</p>
               </div>
               <button 
-                onClick={() => setView('attract')} 
+                onClick={() => window.history.back()} 
                 className="text-zinc-500 hover:text-white uppercase font-bold text-sm tracking-widest transition-colors mb-2"
               >
                 [ ESC / CANCEL ]
@@ -468,20 +473,20 @@ export default function App() {
             key="game-engine"
             gameId={selectedGameId} 
             playerId={playerId}
-            onExit={() => setView('selection')}
+            onExit={() => window.history.back()}
             onGameComplete={handleGameComplete}
           />
         )}
         {view === 'leaderboard' && (
-          <LeaderboardView games={games} onBack={() => setView('attract')} />
+          <LeaderboardView games={games} onBack={() => window.history.back()} />
         )}
 
         {view === 'privacy' && (
-          <PrivacyPolicyView onBack={() => setView('attract')} />
+          <PrivacyPolicyView onBack={() => window.history.back()} />
         )}
 
         {view === 'terms' && (
-          <TermsView onBack={() => setView('attract')} />
+          <TermsView onBack={() => window.history.back()} />
         )}
       </AnimatePresence>
       
