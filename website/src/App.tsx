@@ -239,8 +239,27 @@ export default function App() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 1.05 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="flex-1 flex flex-col items-center justify-center text-center p-8 z-10"
+            className="flex-1 flex flex-col items-center justify-center text-center p-8 z-10 relative"
           >
+            {/* Logos */}
+            <motion.div
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="absolute top-8 left-8 z-20"
+            >
+              <img src="/PAPERLAB NAME LOGO WHITE.png" alt="PaperLab" className="h-8 md:h-12 object-contain opacity-80" />
+            </motion.div>
+            
+            <motion.div
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="absolute top-8 right-8 z-20"
+            >
+              <img src="/R3ACTR LOGO WHITE.png" alt="R3ACTR" className="h-6 md:h-10 object-contain opacity-80" />
+            </motion.div>
+
             <motion.div
               initial={{ y: -20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
