@@ -45,6 +45,8 @@ export default function App() {
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
   const [playerId, setPlayerId] = useState<string | null>(localStorage.getItem('paperlab_player_id'));
   const [nicknameInput, setNicknameInput] = useState('');
+  const [emailInput, setEmailInput] = useState('');
+  const [collegeInput, setCollegeInput] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [pendingRandomGame, setPendingRandomGame] = useState(false);
   const [games, setGames] = React.useState<Game[]>([]);
@@ -95,19 +97,43 @@ export default function App() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nicknameInput.trim()) return;
+    if (!nicknameInput.trim() || !emailInput.trim() || !collegeInput.trim()) return;
     
     setIsRegistering(true);
     try {
-      const { data, error } = await supabase
+      // 1. Check if user with this email already exists
+      const { data: existingUser } = await supabase
         .from('players')
-        .insert([{ nickname: nicknameInput.trim() }])
-        .select()
+        .select('*')
+        .eq('email', emailInput.trim().toLowerCase())
         .single();
+
+      let finalPlayer = existingUser;
+
+      if (!existingUser) {
+        // 2. If not, insert
+        const { data: newUser, error } = await supabase
+          .from('players')
+          .insert([{ 
+            nickname: nicknameInput.trim(),
+            email: emailInput.trim().toLowerCase(),
+            college_name: collegeInput.trim()
+          }])
+          .select()
+          .single();
         
-      if (data) {
-        setPlayerId(data.id);
-        localStorage.setItem('paperlab_player_id', data.id);
+        if (error) {
+          console.error("Supabase Error:", error);
+          alert(`Database Error: ${error.message || JSON.stringify(error)}`);
+          setIsRegistering(false);
+          return;
+        }
+        finalPlayer = newUser;
+      }
+        
+      if (finalPlayer) {
+        setPlayerId(finalPlayer.id);
+        localStorage.setItem('paperlab_player_id', finalPlayer.id);
         
         if (pendingRandomGame) {
           const enabledGames = games.filter(g => g.enabled);
@@ -121,9 +147,6 @@ export default function App() {
         } else {
           setView('selection');
         }
-      } else if (error) {
-        console.error("Supabase Error:", error);
-        alert(`Database Error: ${error.message || JSON.stringify(error)}`);
       }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
@@ -229,7 +252,23 @@ export default function App() {
                   placeholder="NICKNAME"
                   maxLength={15}
                   required
-                  className="bg-zinc-900 border-2 border-zinc-800 focus:border-lime-400 focus:outline-none p-6 text-3xl font-black uppercase text-center tracking-widest transition-colors w-full"
+                  className="bg-zinc-900 border-2 border-zinc-800 focus:border-lime-400 focus:outline-none p-4 text-xl font-black uppercase text-center tracking-widest transition-colors w-full"
+                />
+                <input 
+                  type="email" 
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  placeholder="EMAIL ADDRESS"
+                  required
+                  className="bg-zinc-900 border-2 border-zinc-800 focus:border-lime-400 focus:outline-none p-4 text-xl font-bold text-center tracking-widest transition-colors w-full"
+                />
+                <input 
+                  type="text" 
+                  value={collegeInput}
+                  onChange={(e) => setCollegeInput(e.target.value.toUpperCase())}
+                  placeholder="COLLEGE NAME"
+                  required
+                  className="bg-zinc-900 border-2 border-zinc-800 focus:border-lime-400 focus:outline-none p-4 text-xl font-bold uppercase text-center tracking-widest transition-colors w-full"
                 />
                 
                 <button 

@@ -7,7 +7,7 @@ import ContentEditor from './ContentEditor';
 
 export default function App() {
   const [session, setSession] = useState<boolean>(false);
-  const [activeTab, setActiveTabInternal] = useState<'dashboard' | 'modules' | 'content' | 'players'>('dashboard');
+  const [activeTab, setActiveTabInternal] = useState<'dashboard' | 'modules' | 'content' | 'players' | 'participants'>('dashboard');
   
   const setActiveTab = (tab: typeof activeTab) => {
     window.history.pushState({ tab }, '', `#${tab}`);
@@ -32,7 +32,8 @@ export default function App() {
   
   // Real state for metrics and players
   const [totalPlayers, setTotalPlayers] = useState(0);
-  const [players, setPlayers] = useState<any[]>([]);
+  const [players, setPlayers] = useState<any[]>([]); // Leaderboard rows
+  const [participants, setParticipants] = useState<any[]>([]); // Unique participants
 
 
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function App() {
       fetchGames();
       fetchLeaderboard();
       fetchMetrics();
+      fetchParticipants();
 
       // Supabase Realtime Subscription for Live Updates
       const channel = supabase
@@ -47,6 +49,11 @@ export default function App() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'scores' }, () => {
           fetchLeaderboard();
           fetchMetrics();
+          fetchParticipants();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'players' }, () => {
+          fetchMetrics();
+          fetchParticipants();
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'games' }, () => {
           fetchGames();
@@ -69,6 +76,32 @@ export default function App() {
   const fetchMetrics = async () => {
     const { count } = await supabase.from('players').select('*', { count: 'exact', head: true });
     if (count !== null) setTotalPlayers(count);
+  };
+
+  const fetchParticipants = async () => {
+    const { data } = await supabase
+      .from('players')
+      .select(`
+        id,
+        nickname,
+        email,
+        college_name,
+        created_at,
+        scores ( score )
+      `)
+      .order('created_at', { ascending: false });
+      
+    if (data) {
+      const formatted = data.map((row: any) => {
+        // Calculate total score for each participant
+        const totalScore = (row.scores || []).reduce((acc: number, curr: any) => acc + curr.score, 0);
+        return {
+          ...row,
+          totalScore
+        };
+      });
+      setParticipants(formatted);
+    }
   };
 
   const fetchLeaderboard = async () => {
@@ -196,7 +229,13 @@ export default function App() {
           onClick={() => { setActiveTab('players'); setIsSidebarOpen(false); }}
           className={`flex items-center gap-3 transition-colors ${activeTab === 'players' ? 'text-primary font-bold' : 'text-muted hover:text-white'}`}
         >
-          <Users size={18} /> Players & Ranks
+          <Trophy size={18} /> Leaderboards
+        </button>
+        <button 
+          onClick={() => { setActiveTab('participants'); setIsSidebarOpen(false); }}
+          className={`flex items-center gap-3 transition-colors ${activeTab === 'participants' ? 'text-primary font-bold' : 'text-muted hover:text-white'}`}
+        >
+          <Users size={18} /> Participants
         </button>
         <button className="flex items-center gap-3 text-muted hover:text-white hover:bg-white/5 p-3 rounded-xl transition-all">
           <Settings size={18} /> Settings
