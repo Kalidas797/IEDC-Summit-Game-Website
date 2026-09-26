@@ -105,11 +105,20 @@ export interface DifferenceContentData {
 
 export interface DifferenceRegion {
   id: string;
-  x: number;      // normalized 0-1
-  y: number;      // normalized 0-1
-  width: number;  // normalized 0-1
-  height: number; // normalized 0-1
   label: string;
+  shape: 'rectangle' | 'ellipse' | 'polygon';
+  // Rectangle
+  x?: number;      // normalized 0-1
+  y?: number;      // normalized 0-1
+  width?: number;  // normalized 0-1
+  height?: number; // normalized 0-1
+  // Ellipse
+  cx?: number;
+  cy?: number;
+  rx?: number;
+  ry?: number;
+  // Polygon
+  points?: { x: number; y: number }[];
 }
 
 /** Doodle Telephone — data shape */

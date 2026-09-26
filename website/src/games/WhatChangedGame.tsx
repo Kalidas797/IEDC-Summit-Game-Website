@@ -1,14 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabase';
-import type { GameContent } from '../../../shared/types';
+import type { GameContent, DifferenceRegion } from '../../../shared/types';
 
 interface WhatChangedGameProps {
   onComplete: (score: number, timeMs: number) => void;
   onExit: () => void;
 }
-
-interface Region { id: string; x: number; y: number; width: number; height: number; label: string; }
 
 type Phase = 'loading' | 'error' | 'memorize' | 'recall' | 'gameover';
 
@@ -64,22 +62,54 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
     setTimeout(() => onComplete(score, totalTime), 2500);
   };
 
-  const handleTap = (e: React.MouseEvent) => {
-    if (phase !== 'recall' || !content || !imgRef.current) return;
-    const rect = imgRef.current.getBoundingClientRect();
-    const normX = (e.clientX - rect.left) / rect.width;
-    const normY = (e.clientY - rect.top) / rect.height;
+  const isPointInRegion = (px: number, py: number, r: DifferenceRegion) => {
+    const shape = r.shape || 'rectangle';
+    if (shape === 'rectangle' && r.x !== undefined && r.width !== undefined) {
+      const pad = 0.02;
+      return px >= r.x - pad && px <= r.x + r.width + pad && py >= r.y! - pad && py <= r.y! + r.height! + pad;
+    }
+    if (shape === 'ellipse' && r.cx !== undefined && r.rx !== undefined) {
+      const pad = 0.02;
+      const dx = px - r.cx;
+      const dy = py - r.cy!;
+      const rx = r.rx + pad;
+      const ry = r.ry! + pad;
+      return (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 1;
+    }
+    if (shape === 'polygon' && r.points) {
+      let inside = false;
+      for (let i = 0, j = r.points.length - 1; i < r.points.length; j = i++) {
+        const xi = r.points[i].x, yi = r.points[i].y;
+        const xj = r.points[j].x, yj = r.points[j].y;
+        const intersect = ((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+    return false;
+  };
 
-    const regions: Region[] = content.data?.regions || [];
+  const handleTap = (e: React.MouseEvent | React.TouchEvent) => {
+    if (phase !== 'recall' || !content || !imgRef.current) return;
+    
+    const rect = imgRef.current.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    
+    const normX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const normY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+
+    const regions: DifferenceRegion[] = content.data?.regions || [];
     let found = false;
 
     for (const region of regions) {
       if (foundRegions.has(region.id)) continue;
-      if (normX >= region.x && normX <= region.x + region.width && normY >= region.y && normY <= region.y + region.height) {
+      
+      if (isPointInRegion(normX, normY, region)) {
         const newFound = new Set(foundRegions);
         newFound.add(region.id);
         setFoundRegions(newFound);
-        const newScore = score + 200;
+        const newScore = score + 200; // 200 pts per difference for What Changed
         setScore(newScore);
         found = true;
         if (newFound.size === regions.length) {
@@ -101,9 +131,57 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
   if (phase === 'error') return <div className="flex-1 flex items-center justify-center font-mono text-red-400 uppercase tracking-widest text-xl">Module Unavailable (No Content)</div>;
   if (!content) return null;
 
-  const regions: Region[] = content.data?.regions || [];
+  const regions: DifferenceRegion[] = content.data?.regions || [];
   const origUrl = `${supabaseUrl}/storage/v1/object/public/game-documents/${content.data?.originalImagePath}`;
   const modUrl = `${supabaseUrl}/storage/v1/object/public/game-documents/${content.data?.modifiedImagePath}`;
+
+  const renderShape = (r: DifferenceRegion) => {
+    if (!foundRegions.has(r.id)) return null;
+    
+    const stroke = "#a3e635";
+    const fill = "rgba(163, 230, 53, 0.2)";
+    const strokeWidth = 3;
+
+    const shape = r.shape || 'rectangle';
+    if (shape === 'rectangle' && r.x !== undefined && r.width !== undefined) {
+      return (
+        <rect 
+          key={r.id}
+          x={r.x * 100 + "%"} y={r.y! * 100 + "%"} 
+          width={r.width * 100 + "%"} height={r.height! * 100 + "%"}
+          fill={fill} stroke={stroke} strokeWidth={strokeWidth}
+          className="animate-pulse"
+        />
+      );
+    } else if (shape === 'ellipse' && r.cx !== undefined && r.rx !== undefined) {
+      return (
+        <ellipse 
+          key={r.id}
+          cx={r.cx * 100 + "%"} cy={r.cy! * 100 + "%"} 
+          rx={r.rx * 100 + "%"} ry={r.ry! * 100 + "%"}
+          fill={fill} stroke={stroke} strokeWidth={strokeWidth}
+          className="animate-pulse"
+        />
+      );
+    } else if (shape === 'polygon' && r.points) {
+      const pointsStr = r.points.map(p => `${p.x * 100},${p.y * 100}`).join(' ');
+      return (
+        <polygon 
+          key={r.id}
+          points={pointsStr}
+          fill={fill} stroke={stroke} strokeWidth={strokeWidth}
+          className="animate-pulse"
+        />
+      );
+    }
+    return null;
+  };
+
+  const renderOverlay = () => (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+      {regions.map(renderShape)}
+    </svg>
+  );
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 relative z-10 w-full max-w-5xl mx-auto">
@@ -131,13 +209,9 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
               </div>
               <div className={`text-3xl font-mono font-bold ${recallTimeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-white'}`}>{recallTimeLeft}s</div>
             </div>
-            <div ref={imgRef} className="flex-1 w-full bg-zinc-900 border-2 border-orange-500/30 rounded-lg overflow-hidden relative cursor-crosshair" onClick={handleTap}>
+            <div ref={imgRef} className="w-full aspect-video bg-zinc-900 border-2 border-orange-500/30 rounded-lg overflow-hidden relative cursor-crosshair select-none touch-none" onClick={handleTap} onTouchStart={handleTap}>
               <img src={modUrl} alt="Modified" className="w-full h-full object-contain pointer-events-none" />
-              {regions.map(r => foundRegions.has(r.id) && (
-                <div key={r.id} className="absolute border-2 border-lime-400 bg-lime-400/20 pointer-events-none z-10 animate-pulse" style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.width * 100}%`, height: `${r.height * 100}%` }}>
-                  <span className="absolute -bottom-5 left-0 bg-lime-400 text-black text-[8px] font-bold px-1 whitespace-nowrap">{r.label}</span>
-                </div>
-              ))}
+              {renderOverlay()}
               {showWrong && (
                 <motion.div initial={{ scale: 0, opacity: 1 }} animate={{ scale: 2, opacity: 0 }} className="absolute w-6 h-6 border-2 border-red-500 rounded-full pointer-events-none z-20" style={{ left: `${showWrong.x * 100}%`, top: `${showWrong.y * 100}%`, transform: 'translate(-50%, -50%)' }} />
               )}
@@ -148,7 +222,7 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
 
         {phase === 'gameover' && (
           <motion.div key="gameover" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center justify-center">
-            <h1 className="text-6xl font-black uppercase text-orange-400 mb-4">{foundRegions.size === regions.length ? 'ALL FOUND!' : 'TIME UP!'}</h1>
+            <h1 className="text-6xl font-black uppercase text-orange-400 mb-4 text-center px-4">{foundRegions.size === regions.length ? 'ALL FOUND!' : 'TIME UP!'}</h1>
             <p className="text-2xl font-mono text-zinc-400">Score: {score}</p>
           </motion.div>
         )}
