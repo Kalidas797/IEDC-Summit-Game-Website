@@ -4,8 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GameEngine from './games/GameEngine';
 import { supabase } from './supabase';
 import LeaderboardView from './LeaderboardView';
+import PrivacyPolicyView from './PrivacyPolicyView';
+import TermsView from './TermsView';
 
-type ViewState = 'attract' | 'registration' | 'selection' | 'game' | 'leaderboard';
+type ViewState = 'attract' | 'registration' | 'selection' | 'game' | 'leaderboard' | 'privacy' | 'terms';
 
 import type { Game } from '../../shared/types';
 // Fallback local UI info mapped to game slug
@@ -50,10 +52,19 @@ export default function App() {
       }
     };
     
-    window.history.replaceState({ view: 'attract' }, '', '#attract');
-    // Clear on initial load if we start at attract
-    setPlayerId(null);
-    localStorage.removeItem('paperlab_player_id');
+    const hash = window.location.hash.replace('#', '') as ViewState;
+    if (['privacy', 'terms', 'leaderboard', 'attract'].includes(hash)) {
+      window.history.replaceState({ view: hash }, '', `#${hash}`);
+      setViewInternal(hash);
+      if (hash === 'attract') {
+        setPlayerId(null);
+        localStorage.removeItem('paperlab_player_id');
+      }
+    } else {
+      window.history.replaceState({ view: 'attract' }, '', '#attract');
+      setPlayerId(null);
+      localStorage.removeItem('paperlab_player_id');
+    }
     
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -63,6 +74,7 @@ export default function App() {
   const [nicknameInput, setNicknameInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
   const [collegeInput, setCollegeInput] = useState('');
+  const [consentGiven, setConsentGiven] = useState(false);
   const [regStep, setRegStep] = useState<1 | 2>(1);
   const [isRegistering, setIsRegistering] = useState(false);
   const [pendingRandomGame, setPendingRandomGame] = useState(false);
@@ -153,7 +165,7 @@ export default function App() {
         setIsRegistering(false);
       }
     } else {
-      if (!nicknameInput.trim() || !collegeInput.trim()) return;
+      if (!nicknameInput.trim() || !collegeInput.trim() || !consentGiven) return;
       setIsRegistering(true);
       try {
         const { data: newUser, error } = await supabase
@@ -161,7 +173,10 @@ export default function App() {
           .insert([{ 
             nickname: nicknameInput.trim(),
             email: emailInput.trim().toLowerCase(),
-            college_name: collegeInput.trim()
+            college_name: collegeInput.trim(),
+            consent_given: consentGiven,
+            consent_timestamp: new Date().toISOString(),
+            consent_version: 'privacy-v1'
           }])
           .select()
           .single();
@@ -320,12 +335,31 @@ export default function App() {
                       required
                       className="bg-zinc-900 border-2 border-zinc-800 focus:border-lime-400 focus:outline-none p-4 text-xl font-bold uppercase text-center tracking-widest transition-colors w-full"
                     />
+                    
+                    <div className="flex flex-col gap-2 mt-4 p-4 bg-black/40 border border-zinc-800 rounded-lg">
+                      <label className="flex items-start gap-3 cursor-pointer group">
+                        <div className="mt-1 flex-shrink-0">
+                          <input 
+                            type="checkbox" 
+                            checked={consentGiven}
+                            onChange={(e) => setConsentGiven(e.target.checked)}
+                            className="w-5 h-5 accent-lime-400 cursor-pointer"
+                          />
+                        </div>
+                        <div className="text-sm font-mono text-zinc-300 leading-relaxed text-left">
+                          I agree to PaperLab Games Arena collecting and processing my name, email address, and college/institution name to create my player profile, manage game sessions, maintain scores and leaderboards, and operate the event.
+                        </div>
+                      </label>
+                      <div className="text-xs font-mono text-zinc-500 text-left mt-2 pl-8">
+                        By continuing, you acknowledge our <a href="/#privacy" target="_blank" rel="noopener noreferrer" className="text-lime-400 hover:underline">Privacy Policy</a> and <a href="/#terms" target="_blank" rel="noopener noreferrer" className="text-lime-400 hover:underline">Terms & Conditions</a>.
+                      </div>
+                    </div>
                   </>
                 )}
                 
                 <button 
                   type="submit" 
-                  disabled={isRegistering || (regStep === 1 ? !emailInput.trim() : !nicknameInput.trim())}
+                  disabled={isRegistering || (regStep === 1 ? !emailInput.trim() : (!nicknameInput.trim() || !collegeInput.trim() || !consentGiven))}
                   className="bg-lime-400 hover:bg-lime-300 disabled:bg-zinc-800 disabled:text-zinc-600 text-zinc-950 font-black uppercase tracking-widest text-xl px-12 py-6 flex justify-center items-center gap-3 transition-colors w-full"
                 >
                   {isRegistering ? 'CONNECTING...' : 'CONTINUE'} <ArrowRight size={24} />
@@ -428,7 +462,24 @@ export default function App() {
         {view === 'leaderboard' && (
           <LeaderboardView games={games} onBack={() => setView('attract')} />
         )}
+
+        {view === 'privacy' && (
+          <PrivacyPolicyView onBack={() => setView('attract')} />
+        )}
+
+        {view === 'terms' && (
+          <TermsView onBack={() => setView('attract')} />
+        )}
       </AnimatePresence>
+      
+      {/* Footer */}
+      {(view === 'attract' || view === 'registration') && (
+        <footer className="absolute bottom-4 right-8 flex gap-4 text-xs font-mono uppercase tracking-widest text-zinc-500 z-50">
+          <a href="#privacy" onClick={(e) => { e.preventDefault(); setView('privacy'); }} className="hover:text-lime-400 transition-colors">Privacy Policy</a>
+          <span>|</span>
+          <a href="#terms" onClick={(e) => { e.preventDefault(); setView('terms'); }} className="hover:text-lime-400 transition-colors">Terms & Conditions</a>
+        </footer>
+      )}
     </div>
   );
 }

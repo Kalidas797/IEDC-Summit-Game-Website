@@ -1,0 +1,4 @@
+ALTER TABLE public.players 
+ADD COLUMN IF NOT EXISTS consent_given BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS consent_timestamp TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS consent_version TEXT;

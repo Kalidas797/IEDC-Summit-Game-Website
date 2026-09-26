@@ -477,6 +477,7 @@ export default function App() {
                     <th className="pb-4 font-normal">NICKNAME</th>
                     <th className="pb-4 font-normal">EMAIL</th>
                     <th className="pb-4 font-normal">COLLEGE</th>
+                    <th className="pb-4 font-normal">CONSENT</th>
                     <th className="pb-4 font-normal text-right">ACTIONS</th>
                   </tr>
                 </thead>
@@ -491,6 +492,13 @@ export default function App() {
                       </td>
                       <td className="py-4 text-muted">{p.email || 'N/A'}</td>
                       <td className="py-4 text-muted">{p.college_name || 'N/A'}</td>
+                      <td className="py-4 text-muted">
+                        {p.consent_given ? (
+                          <span className="text-lime-400 text-xs px-2 py-1 bg-lime-400/10 rounded">YES ({p.consent_version})</span>
+                        ) : (
+                          <span className="text-red-400 text-xs px-2 py-1 bg-red-400/10 rounded">NO</span>
+                        )}
+                      </td>
                       <td className="py-4 flex justify-end gap-3 text-muted">
                         <button 
                           className="px-3 py-1 bg-lime-400/10 text-lime-400 hover:bg-lime-400/20 rounded font-bold text-xs uppercase"
