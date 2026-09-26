@@ -27,18 +27,32 @@ export default function App() {
   const setView = (newView: typeof view) => {
     window.history.pushState({ view: newView }, '', `#${newView}`);
     setViewInternal(newView);
+    if (newView === 'attract') {
+      setPlayerId(null);
+      localStorage.removeItem('paperlab_player_id');
+    }
   };
 
   React.useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       if (event.state && event.state.view) {
         setViewInternal(event.state.view);
+        if (event.state.view === 'attract') {
+          setPlayerId(null);
+          localStorage.removeItem('paperlab_player_id');
+        }
       } else {
         setViewInternal('attract');
+        setPlayerId(null);
+        localStorage.removeItem('paperlab_player_id');
       }
     };
     
     window.history.replaceState({ view: 'attract' }, '', '#attract');
+    // Clear on initial load if we start at attract
+    setPlayerId(null);
+    localStorage.removeItem('paperlab_player_id');
+    
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);

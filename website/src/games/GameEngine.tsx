@@ -8,7 +8,7 @@ import TicTacToeGame from './TicTacToeGame';
 import AIOrHumanGame from './AIOrHumanGame';
 import SpotDifferenceGame from './SpotDifferenceGame';
 import DoodleGame from './DoodleGame';
-import CrosswordGame from './CrosswordGame';
+import HiddenWordsGame from './HiddenWordsGame';
 import WhatChangedGame from './WhatChangedGame';
 
 interface GameEngineProps {
@@ -156,7 +156,7 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
                <DoodleGame onComplete={finishGame} onExit={onExit} />
             )}
             {gameId === 'crossword' && (
-               <CrosswordGame onComplete={finishGame} onExit={onExit} />
+               <HiddenWordsGame onComplete={finishGame} onExit={onExit} />
             )}
             {gameId === 'what-changed' && (
                <WhatChangedGame onComplete={finishGame} onExit={onExit} />

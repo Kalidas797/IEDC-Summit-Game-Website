@@ -8,7 +8,7 @@ import MemoryEditor from './editors/MemoryEditor';
 import AIOrHumanEditor from './editors/AIOrHumanEditor';
 import SpotDifferenceEditor from './editors/SpotDifferenceEditor';
 import DoodleEditor from './editors/DoodleEditor';
-import CrosswordEditor from './editors/CrosswordEditor';
+import HiddenWordsEditor from './editors/HiddenWordsEditor';
 import ReactionEditor from './editors/ReactionEditor';
 import TicTacToeEditor from './editors/TicTacToeEditor';
 
@@ -67,7 +67,7 @@ export default function ContentEditor() {
       case 'doodle':
         return <DoodleEditor gameId={activeGameId} />;
       case 'crossword':
-        return <CrosswordEditor gameId={activeGameId} />;
+        return <HiddenWordsEditor gameId={activeGameId} />;
       case 'reaction':
         return <ReactionEditor gameId={activeGameId} />;
       case 'tic-tac-toe':

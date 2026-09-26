@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, LogIn, Activity, Settings, Users, Database, Edit, Trash2, Power, Menu, X } from 'lucide-react';
+import { Lock, LogIn, Activity, Settings, Users, Database, Edit, Trash2, Power, Menu, X, Trophy } from 'lucide-react';
 import { supabase } from './supabase';
 import type { Game } from '../../shared/types';
 import ContentEditor from './ContentEditor';
@@ -33,7 +33,6 @@ export default function App() {
   // Real state for metrics and players
   const [totalPlayers, setTotalPlayers] = useState(0);
   const [players, setPlayers] = useState<any[]>([]); // Leaderboard rows
-  const [participants, setParticipants] = useState<any[]>([]); // Unique participants
 
 
   useEffect(() => {
@@ -79,29 +78,7 @@ export default function App() {
   };
 
   const fetchParticipants = async () => {
-    const { data } = await supabase
-      .from('players')
-      .select(`
-        id,
-        nickname,
-        email,
-        college_name,
-        created_at,
-        scores ( score )
-      `)
-      .order('created_at', { ascending: false });
-      
-    if (data) {
-      const formatted = data.map((row: any) => {
-        // Calculate total score for each participant
-        const totalScore = (row.scores || []).reduce((acc: number, curr: any) => acc + curr.score, 0);
-        return {
-          ...row,
-          totalScore
-        };
-      });
-      setParticipants(formatted);
-    }
+    //
   };
 
   const fetchLeaderboard = async () => {

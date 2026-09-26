@@ -120,26 +120,23 @@ export interface DoodleContentData {
   rounds: number;       // how many draw/guess rounds
 }
 
-/** Crossword — data shape */
-export interface CrosswordContentData {
-  words: CrosswordWord[];
-  timeLimit: number; // seconds
-  grid: CrosswordCell[][] | null; // generated grid
+/** Hidden Words — data shape */
+export interface HiddenWordsContentData {
+  words: string[];
   gridSize: number;
+  timeLimit: number;
+  showHints: boolean;
+  allowedDirections: string[];
+  grid: string[][];
+  placements: HiddenWordPlacement[];
 }
 
-export interface CrosswordWord {
+export interface HiddenWordPlacement {
   word: string;
-  clue: string;
-  direction?: 'across' | 'down';
-  startRow?: number;
-  startCol?: number;
-}
-
-export interface CrosswordCell {
-  letter: string | null; // null = black cell
-  number: number | null; // clue number if start of word
-  isBlack: boolean;
+  startRow: number;
+  startCol: number;
+  direction: string;
+  positions: { row: number, col: number }[];
 }
 
 /** Reaction Challenge — data shape (stored in game_content) */

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, ChevronLeft } from 'lucide-react';
 import { supabase } from './supabase';
@@ -40,25 +40,18 @@ export default function LeaderboardView({ games, onBack }: LeaderboardViewProps)
   }, []);
 
   const getOverallLeaderboard = () => {
-    const playerBestScores: Record<string, { nickname: string; totalScore: number; gameScores: Record<string, number> }> = {};
+    const playerTotals: Record<string, { nickname: string; totalScore: number }> = {};
     
     scores.forEach(s => {
       const pId = s.player_id;
-      if (!playerBestScores[pId]) {
-        playerBestScores[pId] = { nickname: s.players?.nickname || 'Unknown', totalScore: 0, gameScores: {} };
+      if (!playerTotals[pId]) {
+        playerTotals[pId] = { nickname: s.players?.nickname || 'Unknown', totalScore: 0 };
       }
-      
-      const currentBest = playerBestScores[pId].gameScores[s.game_id] || 0;
-      if (s.score > currentBest) {
-        playerBestScores[pId].gameScores[s.game_id] = s.score;
-      }
+      // Add/stack ALL scores for overall leaderboard
+      playerTotals[pId].totalScore += s.score;
     });
 
-    Object.values(playerBestScores).forEach(p => {
-      p.totalScore = Object.values(p.gameScores).reduce((a, b) => a + b, 0);
-    });
-
-    return Object.values(playerBestScores)
+    return Object.values(playerTotals)
       .sort((a, b) => b.totalScore - a.totalScore)
       .slice(0, 100); // Top 100
   };
