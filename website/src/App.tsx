@@ -253,7 +253,9 @@ export default function App() {
               transition={{ delay: 0.1 }}
               className="absolute top-8 left-8 z-20"
             >
-              <img src="/PAPERLAB NAME LOGO WHITE.png" alt="PaperLab" className="h-8 md:h-12 object-contain opacity-80" />
+              <a href="https://paperlab.r3actr.work" target="_blank" rel="noopener noreferrer" className="block hover:scale-105 transition-transform">
+                <img src="/PAPERLAB NAME LOGO WHITE.png" alt="PaperLab" className="h-8 md:h-12 object-contain opacity-80 hover:opacity-100 transition-opacity" />
+              </a>
             </motion.div>
             
             <motion.div
@@ -262,7 +264,9 @@ export default function App() {
               transition={{ delay: 0.1 }}
               className="absolute top-8 right-8 z-20"
             >
-              <img src="/R3ACTR LOGO WHITE.png" alt="R3ACTR" className="h-6 md:h-10 object-contain opacity-80" />
+              <a href="https://r3actr.work" target="_blank" rel="noopener noreferrer" className="block hover:scale-105 transition-transform">
+                <img src="/R3ACTR LOGO WHITE.png" alt="R3ACTR" className="h-6 md:h-10 object-contain opacity-80 hover:opacity-100 transition-opacity" />
+              </a>
             </motion.div>
 
             <motion.div
