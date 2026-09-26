@@ -13,6 +13,10 @@ interface Props {
 export default function QuestionsPerGameEditor({ gameId, settingsContentType, activeContentCount, label = 'Questions per Game' }: Props) {
   const [settingsRecord, setSettingsRecord] = useState<GameContent | null>(null);
   const [questionsPerGame, setQuestionsPerGame] = useState<number>(5);
+  const [gameTimeLimit, setGameTimeLimit] = useState<number>(60);
+  const [questionTimeLimit, setQuestionTimeLimit] = useState<number>(10);
+  const [maxScorePerQuestion, setMaxScorePerQuestion] = useState<number>(100);
+  const [timeBasedScoringEnabled, setTimeBasedScoringEnabled] = useState<boolean>(true);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -29,13 +33,21 @@ export default function QuestionsPerGameEditor({ gameId, settingsContentType, ac
 
     if (data) {
       setSettingsRecord(data as GameContent);
-      const val = (data.data as QuestionsPerGameSettingsData)?.questionsPerGame;
-      if (val !== undefined) {
-        setQuestionsPerGame(val);
+      const typedData = data.data as QuestionsPerGameSettingsData;
+      if (typedData) {
+        if (typedData.questionsPerGame !== undefined) setQuestionsPerGame(typedData.questionsPerGame);
+        if (typedData.gameTimeLimit !== undefined) setGameTimeLimit(typedData.gameTimeLimit);
+        if (typedData.questionTimeLimit !== undefined) setQuestionTimeLimit(typedData.questionTimeLimit);
+        if (typedData.maxScorePerQuestion !== undefined) setMaxScorePerQuestion(typedData.maxScorePerQuestion);
+        if (typedData.timeBasedScoringEnabled !== undefined) setTimeBasedScoringEnabled(typedData.timeBasedScoringEnabled);
       }
     } else {
       setSettingsRecord(null);
       setQuestionsPerGame(5);
+      setGameTimeLimit(60);
+      setQuestionTimeLimit(10);
+      setMaxScorePerQuestion(100);
+      setTimeBasedScoringEnabled(true);
     }
   };
 
@@ -52,7 +64,13 @@ export default function QuestionsPerGameEditor({ gameId, settingsContentType, ac
       content_type: settingsContentType,
       difficulty: 'MEDIUM' as const,
       is_active: true,
-      data: { questionsPerGame } as QuestionsPerGameSettingsData,
+      data: { 
+        questionsPerGame, 
+        gameTimeLimit, 
+        questionTimeLimit, 
+        maxScorePerQuestion, 
+        timeBasedScoringEnabled 
+      } as QuestionsPerGameSettingsData,
     };
 
     if (settingsRecord) {
@@ -116,6 +134,54 @@ export default function QuestionsPerGameEditor({ gameId, settingsContentType, ac
               Warning: You requested {questionsPerGame} {label.toLowerCase()}, but only {activeContentCount} are active. Players will only see {activeContentCount} challenges per session.
             </div>
           )}
+
+          <div className="mt-8 pt-6 border-t border-white/5">
+            <h4 className="text-sm font-bold uppercase tracking-widest text-zinc-300 mb-4">Time & Scoring Configuration</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+              <label className="flex flex-col">
+                <span className="text-xs uppercase tracking-widest text-zinc-500 font-bold mb-1">Game Time Limit (sec)</span>
+                <input 
+                  type="number" min="0"
+                  value={gameTimeLimit} onChange={(e) => setGameTimeLimit(parseInt(e.target.value) || 0)}
+                  className="p-3 bg-black border border-white/20 text-white font-mono rounded-lg outline-none focus:border-cyan-400" 
+                />
+              </label>
+              <label className="flex flex-col">
+                <span className="text-xs uppercase tracking-widest text-zinc-500 font-bold mb-1">Time per Question (sec)</span>
+                <input 
+                  type="number" min="1"
+                  value={questionTimeLimit} onChange={(e) => setQuestionTimeLimit(parseInt(e.target.value) || 1)}
+                  className="p-3 bg-black border border-white/20 text-white font-mono rounded-lg outline-none focus:border-cyan-400" 
+                />
+              </label>
+              <label className="flex flex-col">
+                <span className="text-xs uppercase tracking-widest text-zinc-500 font-bold mb-1">Max Score (per question)</span>
+                <input 
+                  type="number" min="0"
+                  value={maxScorePerQuestion} onChange={(e) => setMaxScorePerQuestion(parseInt(e.target.value) || 0)}
+                  className="p-3 bg-black border border-white/20 text-white font-mono rounded-lg outline-none focus:border-cyan-400" 
+                />
+              </label>
+            </div>
+            
+            <label className="flex items-center gap-3 cursor-pointer group mb-2">
+              <div className="relative">
+                <input 
+                  type="checkbox" 
+                  checked={timeBasedScoringEnabled}
+                  onChange={(e) => setTimeBasedScoringEnabled(e.target.checked)}
+                  className="sr-only"
+                />
+                <div className={`w-10 h-6 rounded-full transition-colors ${timeBasedScoringEnabled ? 'bg-cyan-400' : 'bg-zinc-700'}`}>
+                  <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${timeBasedScoringEnabled ? 'left-5' : 'left-1'}`} />
+                </div>
+              </div>
+              <div>
+                <span className="text-sm font-bold uppercase tracking-widest text-zinc-300">Reward Faster Answers</span>
+                <p className="text-xs text-zinc-500 font-mono mt-0.5">When enabled, faster correct answers receive more points based on the remaining question time.</p>
+              </div>
+            </label>
+          </div>
 
         </div>
       </div>

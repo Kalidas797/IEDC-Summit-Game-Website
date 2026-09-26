@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabase';
-import type { GameContent } from '../../../shared/types';
+import type { GameContent, QuestionsPerGameSettingsData } from '../../../shared/types';
+import { calculateTimeBasedScore } from '../utils/scoring';
 
 interface MemoryGameProps {
   onUpdateScore: (score: number) => void;
@@ -20,10 +21,14 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
   const [score, setScore] = useState(0);
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(null);
+  const [settings, setSettings] = useState<QuestionsPerGameSettingsData | null>(null);
+  const [questionTimeLeft, setQuestionTimeLeft] = useState(10);
+  const [pointsEarned, setPointsEarned] = useState(0);
   
   const content = challenges[currentChallengeIndex] || null;
   
   const startTimeRef = useRef<number>(0);
+  const questionStartTimeRef = useRef<number>(0);
   
   useEffect(() => {
     async function loadContent() {
@@ -41,7 +46,14 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
         .eq('game_id', gameData.id)
         .eq('content_type', 'memory-settings')
         .single();
-      const questionsPerGame = settingsData?.data?.questionsPerGame || 3;
+      const config = (settingsData?.data || {
+        questionsPerGame: 3,
+        questionTimeLimit: 10,
+        maxScorePerQuestion: 100,
+        timeBasedScoringEnabled: false
+      }) as QuestionsPerGameSettingsData;
+      setSettings(config);
+      const questionsPerGame = config.questionsPerGame;
 
       // Fetch Active Content
       const { data: contentData } = await supabase
@@ -96,33 +108,56 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
         return () => clearTimeout(timer);
       } else {
         setState('questions');
+        setQuestionTimeLeft(settings?.questionTimeLimit || 10);
+        questionStartTimeRef.current = performance.now();
       }
     }
   }, [memoryTimeLeft, state]);
 
-  const handleAnswer = (selectedIndex: number) => {
+  // Question Timer
+  useEffect(() => {
+    if (state === 'questions' && selectedAnswerIndex === null) {
+      if (questionTimeLeft > 0) {
+        const timer = setTimeout(() => setQuestionTimeLeft(questionTimeLeft - 1), 1000);
+        return () => clearTimeout(timer);
+      } else {
+        handleAnswer('TIMEOUT');
+      }
+    }
+  }, [questionTimeLeft, state, selectedAnswerIndex]);
+
+  const handleAnswer = (selectedIndex: number | 'TIMEOUT') => {
     if (!content || selectedAnswerIndex !== null) return;
     
-    setSelectedAnswerIndex(selectedIndex);
+    const elapsedMs = performance.now() - questionStartTimeRef.current;
+    
+    // Default to a wrong index if timeout
+    const actualSelection = selectedIndex === 'TIMEOUT' ? -1 : selectedIndex;
+    setSelectedAnswerIndex(actualSelection);
     
     const questions = content.data.questions;
     const currentQ = questions[currentQuestionIndex];
     
     let newScore = score;
     let newCorrect = correctAnswers;
+    let earned = 0;
     
-    if (selectedIndex === currentQ.correctAnswer) {
-      newScore += 100;
+    if (actualSelection === currentQ.correctAnswer && settings) {
+      earned = calculateTimeBasedScore(elapsedMs, settings, true);
+      newScore += earned;
       newCorrect += 1;
       setScore(newScore);
       setCorrectAnswers(newCorrect);
       onUpdateScore(newScore);
     }
+    setPointsEarned(earned);
     
     setTimeout(() => {
       setSelectedAnswerIndex(null);
       if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
+        setQuestionTimeLeft(settings?.questionTimeLimit || 10);
+        questionStartTimeRef.current = performance.now();
       } else {
         if (currentChallengeIndex < challenges.length - 1) {
           setCurrentChallengeIndex(prev => prev + 1);
@@ -191,10 +226,15 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
             animate={{ opacity: 1, y: 0 }}
             className="w-full max-w-3xl flex flex-col items-center text-center"
           >
-            <div className="text-lime-400 font-mono tracking-widest uppercase mb-4">
-              Question {currentQuestionIndex + 1} of {content.data.questions.length}
+            <div className="flex w-full justify-between items-end mb-4">
+              <div className="text-lime-400 font-mono tracking-widest uppercase">
+                Question {currentQuestionIndex + 1} of {content.data.questions.length}
+              </div>
+              <div className={`text-2xl font-black font-mono tabular-nums ${questionTimeLeft <= 5 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
+                00:{String(questionTimeLeft).padStart(2, '0')}
+              </div>
             </div>
-            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight mb-12">
+            <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tight mb-8">
               {content.data.questions[currentQuestionIndex].question}
             </h2>
             
@@ -231,6 +271,21 @@ export default function MemoryGame({ onUpdateScore, onComplete }: MemoryGameProp
                 );
               })}
             </div>
+            
+            {selectedAnswerIndex !== null && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 text-xl font-bold uppercase tracking-widest font-mono"
+              >
+                {selectedAnswerIndex === content.data.questions[currentQuestionIndex].correctAnswer 
+                  ? <span className="text-lime-400">✓ Correct (+{pointsEarned} PTS)</span>
+                  : selectedAnswerIndex === -1 
+                    ? <span className="text-red-500">⏱ TIMEOUT (0 PTS)</span>
+                    : <span className="text-red-500">✗ Incorrect (0 PTS)</span>
+                }
+              </motion.div>
+            )}
           </motion.div>
         )}
 

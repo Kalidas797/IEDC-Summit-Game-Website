@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, XCircle } from 'lucide-react';
+import type { QuestionsPerGameSettingsData } from '../../../shared/types';
+import { calculateTimeBasedScore } from '../utils/scoring';
 
 interface ColorWordGameProps {
   onUpdateScore: (score: number) => void;
@@ -17,13 +19,9 @@ const COLORS = [
   { name: 'ORANGE', hex: '#f97316' }   // text-orange-500
 ];
 
-// Constants removed in favor of state
-const SCORE_PER_CORRECT = 100;
-
 export default function ColorWordGame({ onUpdateScore, onComplete }: ColorWordGameProps) {
-  const [totalRounds, setTotalRounds] = useState(10);
-  const [timePerRound, setTimePerRound] = useState(3000);
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<QuestionsPerGameSettingsData | null>(null);
 
   const [currentRound, setCurrentRound] = useState(1);
   const [score, setScore] = useState(0);
@@ -32,8 +30,10 @@ export default function ColorWordGame({ onUpdateScore, onComplete }: ColorWordGa
   const [options, setOptions] = useState<string[]>([]);
   const [timeLeft, setTimeLeft] = useState(3000);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
+  const [pointsEarned, setPointsEarned] = useState(0);
   
   const startTimeRef = useRef<number>(Date.now());
+  const roundStartTimeRef = useRef<number>(Date.now());
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const generateRound = () => {
@@ -62,19 +62,23 @@ export default function ColorWordGame({ onUpdateScore, onComplete }: ColorWordGa
     }
     
     setOptions(Array.from(newOptions).sort(() => Math.random() - 0.5));
-    setTimeLeft(timePerRound);
+    setTimeLeft((settings?.questionTimeLimit || 3) * 1000);
     setFeedback(null);
+    roundStartTimeRef.current = Date.now();
   };
 
   useEffect(() => {
     async function loadSettings() {
       const { data: gameData } = await supabase.from('games').select('id').eq('slug', 'color-word-challenge').single();
       if (gameData) {
-        const { data: settings } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'color-word-settings').eq('is_active', true).single();
-        if (settings) {
-          setTotalRounds(settings.data?.rounds || 10);
-          setTimePerRound(settings.data?.timePerRound || 3000);
-        }
+        const { data: settingsData } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'color-word-settings').single();
+        const config = (settingsData?.data || {
+          questionsPerGame: 10,
+          questionTimeLimit: 3,
+          maxScorePerQuestion: 100,
+          timeBasedScoringEnabled: false
+        }) as QuestionsPerGameSettingsData;
+        setSettings(config);
       }
       setLoading(false);
     }
@@ -86,7 +90,7 @@ export default function ColorWordGame({ onUpdateScore, onComplete }: ColorWordGa
       startTimeRef.current = Date.now();
       generateRound();
     }
-  }, [loading, timePerRound]);
+  }, [loading]);
 
   useEffect(() => {
     if (loading || feedback !== null) return; // Stop timer if round is over
@@ -109,19 +113,24 @@ export default function ColorWordGame({ onUpdateScore, onComplete }: ColorWordGa
     if (feedback !== null) return; // Prevent double clicks
     
     const isCorrect = selectedName === displayColor.name;
+    const elapsedMs = Date.now() - roundStartTimeRef.current;
+    let earned = 0;
     
-    if (isCorrect) {
-      const newScore = score + SCORE_PER_CORRECT;
+    if (isCorrect && settings) {
+      earned = calculateTimeBasedScore(elapsedMs, settings, true);
+      const newScore = score + earned;
       setScore(newScore);
       onUpdateScore(newScore);
       setFeedback('correct');
     } else {
       setFeedback('wrong');
     }
+    setPointsEarned(earned);
 
     setTimeout(() => {
+      const totalRounds = settings?.questionsPerGame || 10;
       if (currentRound >= totalRounds) {
-        onComplete(score + (isCorrect ? SCORE_PER_CORRECT : 0), Date.now() - startTimeRef.current);
+        onComplete(score + earned, Date.now() - startTimeRef.current);
       } else {
         setCurrentRound(prev => prev + 1);
         generateRound();
@@ -138,7 +147,7 @@ export default function ColorWordGame({ onUpdateScore, onComplete }: ColorWordGa
       
       {/* HUD */}
       <div className="absolute top-6 left-6 right-6 flex justify-between items-center text-zinc-400 font-mono uppercase tracking-widest text-sm md:text-xl pointer-events-none">
-        <div>Round {currentRound} / {totalRounds}</div>
+        <div>Round {currentRound} / {settings?.questionsPerGame || 10}</div>
       </div>
 
       <div className="max-w-2xl w-full flex flex-col items-center gap-12">
@@ -147,7 +156,7 @@ export default function ColorWordGame({ onUpdateScore, onComplete }: ColorWordGa
           <motion.div 
             className="h-full bg-rose-500"
             initial={{ width: '100%' }}
-            animate={{ width: ((timeLeft / timePerRound) * 100) + '%' }}
+            animate={{ width: ((timeLeft / ((settings?.questionTimeLimit || 3) * 1000)) * 100) + '%' }}
             transition={{ ease: "linear", duration: 0.1 }}
           />
         </div>
@@ -179,7 +188,10 @@ export default function ColorWordGame({ onUpdateScore, onComplete }: ColorWordGa
                   className="absolute inset-0 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm"
                 >
                   {feedback === 'correct' ? (
-                    <CheckCircle2 size={100} className="text-lime-400" />
+                    <div className="flex flex-col items-center">
+                      <CheckCircle2 size={100} className="text-lime-400 mb-2" />
+                      <div className="text-lime-400 font-black font-mono text-xl md:text-3xl">(+{pointsEarned} PTS)</div>
+                    </div>
                   ) : (
                     <XCircle size={100} className="text-red-500" />
                   )}

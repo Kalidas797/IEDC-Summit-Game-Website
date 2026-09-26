@@ -166,6 +166,10 @@ export interface TicTacToeContentData {
 // Game slug union for type safety
 export interface QuestionsPerGameSettingsData {
   questionsPerGame: number;
+  gameTimeLimit?: number;
+  questionTimeLimit?: number;
+  maxScorePerQuestion?: number;
+  timeBasedScoringEnabled?: boolean;
 }
 
 export type GameSlug = 

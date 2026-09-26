@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabase';
-import type { GameContent, OriginalOrAIContentData } from '../../../shared/types';
+import type { GameContent, OriginalOrAIContentData, QuestionsPerGameSettingsData } from '../../../shared/types';
+import { calculateTimeBasedScore } from '../utils/scoring';
 
 interface AIOrHumanGameProps {
   onUpdateScore: (score: number) => void;
@@ -17,7 +18,9 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
   const [countdown, setCountdown] = useState(3);
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
+  const [pointsEarned, setPointsEarned] = useState(0);
   const [timeLeft, setTimeLeft] = useState(15);
+  const [settings, setSettings] = useState<QuestionsPerGameSettingsData | null>(null);
   
   // To store random positions for the current round
   // false = Original on Left (A), true = Original on Right (B)
@@ -40,6 +43,14 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
         .single();
         
       const questionsPerGame = settingsData?.data?.questionsPerGame || 5;
+      
+      const config = (settingsData?.data || {
+        questionsPerGame: 5,
+        questionTimeLimit: 15,
+        maxScorePerQuestion: 100,
+        timeBasedScoringEnabled: false
+      }) as QuestionsPerGameSettingsData;
+      setSettings(config);
       
       const { data: contentData } = await supabase
         .from('game_content')
@@ -76,7 +87,7 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
         setState('playing');
         startTimeRef.current = performance.now();
         roundStartTimeRef.current = performance.now();
-        setTimeLeft(15);
+        setTimeLeft(settings?.questionTimeLimit || 15);
       }
     }
   }, [countdown, state]);
@@ -106,12 +117,18 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
       if (selection === 'B' && originalIsRight) isCorrect = true;
     }
     
-    if (isCorrect) {
-      const newScore = score + 100;
+    const elapsedMs = performance.now() - roundStartTimeRef.current;
+    
+    let earned = 0;
+    if (isCorrect && settings) {
+      earned = calculateTimeBasedScore(elapsedMs, settings, isCorrect);
+      const newScore = score + earned;
       setScore(newScore);
       onUpdateScore(newScore);
+      setPointsEarned(earned);
       setFeedback('correct');
     } else {
+      setPointsEarned(0);
       setFeedback('incorrect');
     }
 
@@ -122,12 +139,12 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
         setCurrentIndex(currentIndex + 1);
         setOriginalIsRight(Math.random() > 0.5);
         setFeedback(null);
-        setTimeLeft(15);
+        setTimeLeft(settings?.questionTimeLimit || 15);
         setState('playing');
         roundStartTimeRef.current = performance.now();
       } else {
         const totalTime = performance.now() - startTimeRef.current;
-        onComplete(score + (isCorrect ? 100 : 0), totalTime);
+        onComplete(score + earned, totalTime);
       }
     }, 4000); // 4s to read explanation
   };
@@ -254,7 +271,7 @@ export default function AIOrHumanGame({ onUpdateScore, onComplete }: AIOrHumanGa
                   className="w-full bg-zinc-900 border border-zinc-700 p-4 rounded-lg flex flex-col items-center text-center shrink-0"
                 >
                   <div className={`text-3xl font-black uppercase tracking-widest mb-2 ${feedback === 'correct' ? 'text-lime-400' : 'text-red-500'}`}>
-                    {feedback === 'correct' ? '✓ CORRECT (+100 PTS)' : '✗ INCORRECT (0 PTS)'}
+                    {feedback === 'correct' ? `✓ CORRECT (+${pointsEarned} PTS)` : '✗ INCORRECT (0 PTS)'}
                   </div>
                   {data.explanation && (
                     <div className="text-zinc-300 font-mono max-w-3xl">

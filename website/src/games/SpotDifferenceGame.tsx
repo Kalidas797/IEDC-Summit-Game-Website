@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabase';
-import type { GameContent, DifferenceRegion } from '../../../shared/types';
+import type { GameContent, DifferenceRegion, QuestionsPerGameSettingsData } from '../../../shared/types';
+import { calculateTimeBasedScore } from '../utils/scoring';
 
 interface SpotDifferenceGameProps {
   onComplete: (score: number, timeMs: number) => void;
@@ -56,17 +57,22 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
   const origContainerRef = useRef<HTMLDivElement>(null);
   const modContainerRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef<number>(0);
+  const challengeStartTimeRef = useRef<number>(0);
+  const [settings, setSettings] = useState<QuestionsPerGameSettingsData | null>(null);
+  const [lastPointsEarned, setLastPointsEarned] = useState<number | null>(null);
 
   // Use refs to avoid stale closures in callbacks
   const foundIdsRef = useRef<Set<string>>(new Set());
   const scoreRef = useRef(0);
   const gameOverRef = useRef(false);
   const contentRef = useRef<GameContent | null>(null);
+  const settingsRef = useRef<QuestionsPerGameSettingsData | null>(null);
 
   useEffect(() => { foundIdsRef.current = foundIds; }, [foundIds]);
   useEffect(() => { scoreRef.current = score; }, [score]);
   useEffect(() => { gameOverRef.current = gameOver; }, [gameOver]);
   useEffect(() => { contentRef.current = content; }, [content]);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -80,7 +86,16 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
       const { data: settingsData } = await supabase
         .from('game_content').select('data')
         .eq('game_id', gameData.id).eq('content_type', 'spot-difference-settings').single();
-      const questionsPerGame = settingsData?.data?.questionsPerGame || 1;
+        
+      const config = (settingsData?.data || {
+        questionsPerGame: 1,
+        questionTimeLimit: 60,
+        maxScorePerQuestion: 100,
+        timeBasedScoringEnabled: false
+      }) as QuestionsPerGameSettingsData;
+      setSettings(config);
+      
+      const questionsPerGame = config.questionsPerGame;
 
       const { data: contentData } = await supabase
         .from('game_content').select('*')
@@ -101,9 +116,10 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
       setChallenges(selected);
       setCurrentChallengeIndex(0);
       contentRef.current = selected[0];
-      setTimeLeft(selected[0].data?.timeLimit ?? 60);
+      setTimeLeft(config.questionTimeLimit || selected[0].data?.timeLimit || 60);
       setLoading(false);
       startTimeRef.current = performance.now();
+      challengeStartTimeRef.current = performance.now();
     }
     load();
   }, []);
@@ -119,7 +135,9 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
           setFoundIds(new Set());
           setAllFound(false);
           setWrongClicks([]);
-          setTimeLeft(challenges[nextIndex].data?.timeLimit ?? 60);
+          setLastPointsEarned(null);
+          setTimeLeft(settingsRef.current?.questionTimeLimit || challenges[nextIndex].data?.timeLimit || 60);
+          challengeStartTimeRef.current = performance.now();
         }, 2000);
       } else {
         gameOverRef.current = true;
@@ -170,13 +188,21 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
 
         const newFound = new Set(foundIdsRef.current);
         newFound.add(region.id);
-        const newScore = scoreRef.current + 100;
+        const elapsedMs = performance.now() - challengeStartTimeRef.current;
+        let earned = 100; // fallback default
+        
+        if (settingsRef.current) {
+          earned = calculateTimeBasedScore(elapsedMs, settingsRef.current, true);
+        }
+        
+        const newScore = scoreRef.current + earned;
 
         foundIdsRef.current = newFound;
         scoreRef.current = newScore;
 
         setFoundIds(new Set(newFound));
         setScore(newScore);
+        setLastPointsEarned(earned);
         setFlashId(region.id);
         setTimeout(() => setFlashId(null), 700);
 
@@ -191,7 +217,9 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
               setFoundIds(new Set());
               setAllFound(false);
               setWrongClicks([]);
-              setTimeLeft(challenges[nextIndex].data?.timeLimit ?? 60);
+              setLastPointsEarned(null);
+              setTimeLeft(settingsRef.current?.questionTimeLimit || challenges[nextIndex].data?.timeLimit || 60);
+              challengeStartTimeRef.current = performance.now();
             }, 2000);
           } else {
             gameOverRef.current = true;
@@ -294,7 +322,20 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
           <div className={`text-2xl md:text-3xl font-black font-mono tabular-nums ${timeLeft <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
             {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
           </div>
-          <div className="text-lime-400 font-mono text-xs md:text-sm font-bold">{score} pts</div>
+          <div className="text-lime-400 font-mono text-xs md:text-sm font-bold flex gap-2">
+            <span>{score} pts</span>
+            {lastPointsEarned !== null && (
+              <motion.span 
+                key={Date.now()} // Force remount animation
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-cyan-400"
+              >
+                (+{lastPointsEarned})
+              </motion.span>
+            )}
+          </div>
         </div>
       </div>
 

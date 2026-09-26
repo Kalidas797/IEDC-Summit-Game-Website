@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Clock, CheckCircle2, ChevronRight } from 'lucide-react';
-import type { HiddenWordsContentData, HiddenWordPlacement } from '../../../shared/types';
+import type { HiddenWordsContentData, HiddenWordPlacement, QuestionsPerGameSettingsData } from '../../../shared/types';
+import { calculateTimeBasedScore } from '../utils/scoring';
 
 interface HiddenWordsGameProps {
   onComplete: (score: number, timeMs: number) => void;
@@ -22,6 +23,8 @@ export default function HiddenWordsGame({ onComplete, onExit }: HiddenWordsGameP
   const [startTime, setStartTime] = useState<number>(0);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [score, setScore] = useState(0);
+  const [settings, setSettings] = useState<QuestionsPerGameSettingsData | null>(null);
+  const [lastFoundTime, setLastFoundTime] = useState<number>(0);
 
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -48,9 +51,21 @@ export default function HiddenWordsGame({ onComplete, onExit }: HiddenWordsGameP
       }
 
       const data = contentData.data as unknown as HiddenWordsContentData;
+
+      const { data: settingsData } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'hidden-words-settings').single();
+      const config = (settingsData?.data || {
+        questionsPerGame: 1,
+        questionTimeLimit: data.timeLimit || 60,
+        maxScorePerQuestion: 100,
+        timeBasedScoringEnabled: false
+      }) as QuestionsPerGameSettingsData;
+      setSettings(config);
+
       setContent(data);
       setTimeLeft(data.timeLimit || 60);
-      setStartTime(Date.now());
+      const now = Date.now();
+      setStartTime(now);
+      setLastFoundTime(now);
       setLoading(false);
     } catch (err) {
       console.error(err);
@@ -148,8 +163,15 @@ export default function HiddenWordsGame({ onComplete, onExit }: HiddenWordsGameP
       newFound.add(matchedPlacement.word);
       setFoundWords(newFound);
       
-      const newScore = score + 100;
+      const elapsedMs = Date.now() - lastFoundTime;
+      let earned = 100;
+      if (settings) {
+        earned = calculateTimeBasedScore(elapsedMs, settings, true);
+      }
+      
+      const newScore = score + earned;
       setScore(newScore);
+      setLastFoundTime(Date.now());
 
       if (newFound.size === content.words.length) {
         setTimeout(() => onComplete(newScore, Date.now() - startTime), 1500);

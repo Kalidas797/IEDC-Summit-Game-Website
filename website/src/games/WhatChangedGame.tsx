@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../supabase';
-import type { GameContent, DifferenceRegion } from '../../../shared/types';
+import type { GameContent, DifferenceRegion, QuestionsPerGameSettingsData } from '../../../shared/types';
+import { calculateTimeBasedScore } from '../utils/scoring';
 
 interface WhatChangedGameProps {
   onComplete: (score: number, timeMs: number) => void;
@@ -20,9 +21,12 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
   const [foundRegions, setFoundRegions] = useState<Set<string>>(new Set());
   const [score, setScore] = useState(0);
   const [showWrong, setShowWrong] = useState<{ x: number; y: number } | null>(null);
+  const [settings, setSettings] = useState<QuestionsPerGameSettingsData | null>(null);
+  const [lastPointsEarned, setLastPointsEarned] = useState<number | null>(null);
 
   const imgRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef<number>(0);
+  const challengeStartTimeRef = useRef<number>(0);
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
   useEffect(() => {
@@ -33,7 +37,15 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
       const { data: settingsData } = await supabase
         .from('game_content').select('data')
         .eq('game_id', gameData.id).eq('content_type', 'what-changed-settings').single();
-      const questionsPerGame = settingsData?.data?.questionsPerGame || 1;
+      const config = (settingsData?.data || {
+        questionsPerGame: 1,
+        questionTimeLimit: 45,
+        maxScorePerQuestion: 200,
+        timeBasedScoringEnabled: false
+      }) as QuestionsPerGameSettingsData;
+      setSettings(config);
+      
+      const questionsPerGame = config.questionsPerGame;
       
       const { data: contentData } = await supabase.from('game_content').select('*')
         .eq('game_id', gameData.id).eq('is_active', true)
@@ -53,9 +65,10 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
       setChallenges(selected);
       setCurrentChallengeIndex(0);
       setMemoryTimeLeft(selected[0].data?.memoryTime || 10);
-      setRecallTimeLeft(selected[0].data?.timeLimit || 45);
+      setRecallTimeLeft(config.questionTimeLimit || selected[0].data?.timeLimit || 45);
       setPhase('memorize');
       startTimeRef.current = performance.now();
+      challengeStartTimeRef.current = performance.now();
     }
     load();
   }, []);
@@ -63,7 +76,11 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
   // Memory phase timer
   useEffect(() => {
     if (phase !== 'memorize') return;
-    if (memoryTimeLeft <= 0) { setPhase('recall'); return; }
+    if (memoryTimeLeft <= 0) { 
+      setPhase('recall'); 
+      challengeStartTimeRef.current = performance.now();
+      return; 
+    }
     const timer = setTimeout(() => setMemoryTimeLeft(t => t - 1), 1000);
     return () => clearTimeout(timer);
   }, [memoryTimeLeft, phase]);
@@ -83,8 +100,10 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
         setCurrentChallengeIndex(nextIndex);
         setFoundRegions(new Set());
         setMemoryTimeLeft(challenges[nextIndex].data?.memoryTime || 10);
-        setRecallTimeLeft(challenges[nextIndex].data?.timeLimit || 45);
+        setRecallTimeLeft(settings?.questionTimeLimit || challenges[nextIndex].data?.timeLimit || 45);
         setPhase('memorize');
+        challengeStartTimeRef.current = performance.now();
+        setLastPointsEarned(null);
       }, 2000);
     } else {
       setPhase('gameover');
@@ -140,8 +159,18 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
         const newFound = new Set(foundRegions);
         newFound.add(region.id);
         setFoundRegions(newFound);
-        const newScore = score + 200; // 200 pts per difference for What Changed
+        
+        const elapsedMs = performance.now() - challengeStartTimeRef.current;
+        let earned = 200;
+        if (settings) {
+          // If no max score defined in settings but we had 200, use 200
+          const tempSettings = { ...settings, maxScorePerQuestion: settings.maxScorePerQuestion || 200 };
+          earned = calculateTimeBasedScore(elapsedMs, tempSettings, true);
+        }
+        
+        const newScore = score + earned;
         setScore(newScore);
+        setLastPointsEarned(earned);
         found = true;
         if (newFound.size === regions.length) {
           setScore(newScore);
@@ -240,7 +269,23 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
                 </h2>
                 <p className="text-zinc-500 font-mono text-xs mt-1">Found: {foundRegions.size} / {regions.length}</p>
               </div>
-              <div className={`text-3xl font-mono font-bold ${recallTimeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-white'}`}>{recallTimeLeft}s</div>
+              <div className="flex flex-col items-end">
+                <div className={`text-3xl font-mono font-bold ${recallTimeLeft <= 10 ? 'text-red-500 animate-pulse' : 'text-white'}`}>{recallTimeLeft}s</div>
+                <div className="text-lime-400 font-mono text-sm font-bold flex gap-2">
+                  <span>{score} pts</span>
+                  {lastPointsEarned !== null && (
+                    <motion.span 
+                      key={Date.now()}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0 }}
+                      className="text-cyan-400"
+                    >
+                      (+{lastPointsEarned})
+                    </motion.span>
+                  )}
+                </div>
+              </div>
             </div>
             <div ref={imgRef} className="w-full aspect-video bg-zinc-900 border-2 border-orange-500/30 rounded-lg overflow-hidden relative cursor-crosshair select-none touch-none" onClick={handleTap} onTouchStart={handleTap}>
               <img src={modUrl} alt="Modified" className="w-full h-full object-contain pointer-events-none" />
