@@ -9,11 +9,10 @@ interface TicTacToeGameProps {
 
 type Player = 'X' | 'O' | null;
 
-// Minimax algorithm for unbeatable AI
-function minimax(board: Player[], isMaximizing: boolean): number {
+function minimax(board: Player[], depth: number, isMaximizing: boolean): number {
   const winner = checkWinnerStatic(board);
-  if (winner === 'O') return 10;
-  if (winner === 'X') return -10;
+  if (winner === 'O') return 10 - depth;
+  if (winner === 'X') return depth - 10;
   if (!board.includes(null)) return 0;
 
   if (isMaximizing) {
@@ -21,7 +20,7 @@ function minimax(board: Player[], isMaximizing: boolean): number {
     for (let i = 0; i < 9; i++) {
       if (board[i] === null) {
         board[i] = 'O';
-        best = Math.max(best, minimax(board, false));
+        best = Math.max(best, minimax(board, depth + 1, false));
         board[i] = null;
       }
     }
@@ -31,7 +30,7 @@ function minimax(board: Player[], isMaximizing: boolean): number {
     for (let i = 0; i < 9; i++) {
       if (board[i] === null) {
         board[i] = 'X';
-        best = Math.min(best, minimax(board, true));
+        best = Math.min(best, minimax(board, depth + 1, true));
         board[i] = null;
       }
     }
@@ -57,8 +56,8 @@ function getBestMove(board: Player[], difficulty: string): number {
   }
 
   if (difficulty === 'medium') {
-    // 50% chance of optimal move, 50% random
-    if (Math.random() > 0.5) {
+    // 80% chance of optimal move, 20% random (smarter than before)
+    if (Math.random() > 0.8) {
       return available[Math.floor(Math.random() * available.length)];
     }
   }
@@ -69,7 +68,7 @@ function getBestMove(board: Player[], difficulty: string): number {
   for (const i of available) {
     const boardCopy = [...board];
     boardCopy[i] = 'O';
-    const score = minimax(boardCopy, false);
+    const score = minimax(boardCopy, 0, false);
     if (score > bestScore) {
       bestScore = score;
       bestMove = i;
@@ -83,7 +82,7 @@ export default function TicTacToeGame({ onUpdateScore, onComplete }: TicTacToeGa
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
   const [winner, setWinner] = useState<Player | 'draw' | null>(null);
   const [startTime] = useState(performance.now());
-  const [difficulty, setDifficulty] = useState('medium');
+  const [difficulty, setDifficulty] = useState('hard'); // Default to hard
   const [loading, setLoading] = useState(true);
 
   // Load settings
@@ -93,7 +92,7 @@ export default function TicTacToeGame({ onUpdateScore, onComplete }: TicTacToeGa
       if (gameData) {
         const { data: settings } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'tictactoe-settings').eq('is_active', true).maybeSingle();
         if (settings) {
-          setDifficulty(settings.data?.difficulty || 'medium');
+          setDifficulty(settings.data?.difficulty || 'hard');
         }
       }
       setLoading(false);

@@ -196,14 +196,17 @@ export default function App() {
           if (pendingRandomGame) {
             const enabledGames = games.filter(g => g.enabled);
             if (enabledGames.length > 0) {
-              const randomGame = enabledGames[Math.floor(Math.random() * enabledGames.length)];
-              startGame(randomGame.slug);
+              setView('selection', true); // Replace registration with selection so history is clean
+              setTimeout(() => {
+                const randomGame = enabledGames[Math.floor(Math.random() * enabledGames.length)];
+                startGame(randomGame.slug);
+              }, 10);
             } else {
-              setView('selection');
+              setView('selection', true);
             }
             setPendingRandomGame(false);
           } else {
-            setView('selection');
+            setView('selection', true); // Replace registration
           }
         } else {
           setRegStep(2);
@@ -246,14 +249,17 @@ export default function App() {
           if (pendingRandomGame) {
             const enabledGames = games.filter(g => g.enabled);
             if (enabledGames.length > 0) {
-              const randomGame = enabledGames[Math.floor(Math.random() * enabledGames.length)];
-              startGame(randomGame.slug);
+              setView('selection', true);
+              setTimeout(() => {
+                const randomGame = enabledGames[Math.floor(Math.random() * enabledGames.length)];
+                startGame(randomGame.slug);
+              }, 10);
             } else {
-              setView('selection');
+              setView('selection', true);
             }
             setPendingRandomGame(false);
           } else {
-            setView('selection');
+            setView('selection', true);
           }
         }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -273,9 +279,7 @@ export default function App() {
 
   const handleGameComplete = (score: number, timeMs: number) => {
     console.log('Game completed:', { score, timeMs });
-    // Handled by GameEngine now
-    // Replace state so completing a game doesn't add to the back-button stack
-    setView('selection', true);
+    window.history.back(); // Pop the game state to return to selection cleanly
   };
 
   return (
