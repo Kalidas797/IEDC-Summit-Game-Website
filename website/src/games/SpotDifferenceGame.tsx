@@ -87,12 +87,15 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
       if (!gameData) { setError(true); setLoading(false); return; }
 
       // Fetch Settings
-      const { data: settingsData } = await supabase
+      const { data: settingsDataArr } = await supabase
         .from('game_content').select('data')
-        .eq('game_id', gameData.id).eq('content_type', 'spot-difference-settings').single();
+        .eq('game_id', gameData.id).eq('content_type', 'spot-difference-settings')
+        .order('created_at', { ascending: false }).limit(1);
+      
+      const settingsData = settingsDataArr?.[0];
         
       const config = (settingsData?.data || {
-        questionsPerGame: 1,
+        questionsPerGame: 5,
         questionTimeLimit: 60,
         maxScorePerQuestion: 100,
         timeBasedScoringEnabled: true
@@ -115,12 +118,17 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
       }
       
       const selected = shuffled.slice(0, questionsPerGame);
+      console.log('DEBUG SPOT_DIFF selected:', selected);
       if (selected.length === 0) { setError(true); setLoading(false); return; }
 
       setChallenges(selected);
       setCurrentChallengeIndex(0);
       contentRef.current = selected[0];
-      setTimeLeft(config.questionTimeLimit || selected[0].data?.timeLimit || 60);
+      const timeLimit = Number(config.questionTimeLimit);
+      const itemLimit = Number(selected[0].data?.timeLimit);
+      const calculatedTimeLeft = itemLimit > 0 ? itemLimit : (timeLimit > 0 ? timeLimit : 60);
+      
+      setTimeLeft(calculatedTimeLeft);
       setLoading(false);
       startTimeRef.current = performance.now();
       challengeStartTimeRef.current = performance.now();
@@ -130,9 +138,11 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
 
   useEffect(() => {
     if (loading || gameOver || error) return;
+    
     if (timeLeft <= 0) {
+      let t: ReturnType<typeof setTimeout>;
       if (currentIndexRef.current < challengesRef.current.length - 1) {
-        setTimeout(() => {
+        t = setTimeout(() => {
           const nextIndex = currentIndexRef.current + 1;
           setCurrentChallengeIndex(nextIndex);
           contentRef.current = challengesRef.current[nextIndex];
@@ -140,16 +150,18 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
           setAllFound(false);
           setWrongClicks([]);
           setLastPointsEarned(null);
-          setTimeLeft(settingsRef.current?.questionTimeLimit || challengesRef.current[nextIndex].data?.timeLimit || 60);
+          const timeLimit = Number(settingsRef.current?.questionTimeLimit);
+          const itemLimit = Number(challengesRef.current[nextIndex].data?.timeLimit);
+          setTimeLeft(itemLimit > 0 ? itemLimit : (timeLimit > 0 ? timeLimit : 60));
           challengeStartTimeRef.current = performance.now();
         }, 2000);
       } else {
         gameOverRef.current = true;
         setGameOver(true);
         const elapsed = performance.now() - startTimeRef.current;
-        setTimeout(() => onComplete(scoreRef.current, elapsed), 2000);
+        t = setTimeout(() => onComplete(scoreRef.current, elapsed), 2000);
       }
-      return;
+      return () => clearTimeout(t);
     }
     const t = setTimeout(() => setTimeLeft(p => p - 1), 1000);
     return () => clearTimeout(t);
@@ -222,7 +234,9 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
               setAllFound(false);
               setWrongClicks([]);
               setLastPointsEarned(null);
-              setTimeLeft(settingsRef.current?.questionTimeLimit || challengesRef.current[nextIndex].data?.timeLimit || 60);
+              const timeLimit = Number(settingsRef.current?.questionTimeLimit);
+              const itemLimit = Number(challengesRef.current[nextIndex].data?.timeLimit);
+              setTimeLeft(itemLimit > 0 ? itemLimit : (timeLimit > 0 ? timeLimit : 60));
               challengeStartTimeRef.current = performance.now();
             }, 2000);
           } else {

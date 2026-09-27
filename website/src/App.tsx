@@ -336,25 +336,25 @@ export default function App() {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="flex flex-col md:flex-row gap-4 md:gap-6 mb-4 md:mb-16 w-full max-w-sm md:max-w-none px-4 md:px-0"
+              className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-16 w-full max-w-sm md:max-w-[900px] mx-auto px-4 md:px-0"
             >
               <button 
                 onClick={handlePlayNow}
-                className="bg-lime-400 hover:bg-lime-300 text-zinc-950 font-black uppercase tracking-widest text-lg md:text-xl px-8 md:px-12 py-4 md:py-6 flex items-center justify-center gap-3 transition-transform hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(163,230,53,0.3)]"
+                className="bg-lime-400 hover:bg-lime-300 text-zinc-950 font-black uppercase tracking-widest text-lg md:text-xl px-4 md:px-8 py-4 md:py-6 flex items-center justify-center gap-3 transition-transform hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(163,230,53,0.3)] border-2 border-lime-400 w-full h-full"
               >
-                <Play size={28} fill="currentColor" className="w-6 h-6 md:w-7 md:h-7" /> Play Now
+                <Play size={28} fill="currentColor" className="shrink-0" /> Play Now
               </button>
               <button 
                 onClick={handleRandomGame}
-                className="bg-zinc-900 border-2 border-zinc-800 hover:border-cyan-400 hover:text-cyan-400 text-zinc-300 font-bold uppercase tracking-widest text-lg md:text-xl px-8 md:px-12 py-4 md:py-6 flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95"
+                className="bg-zinc-900 border-2 border-zinc-800 hover:border-cyan-400 hover:text-cyan-400 text-zinc-300 font-bold uppercase tracking-widest text-lg md:text-xl px-4 md:px-8 py-4 md:py-6 flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95 w-full h-full"
               >
-                <Sparkles size={28} /> Random Game
+                <Sparkles size={28} className="shrink-0" /> Random Game
               </button>
               <button 
                 onClick={() => setView('leaderboard')}
-                className="bg-zinc-900 border-2 border-zinc-800 hover:border-lime-400 hover:text-lime-400 text-zinc-300 font-bold uppercase tracking-widest text-lg md:text-xl px-8 md:px-12 py-4 md:py-6 flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95 md:col-span-2"
+                className="bg-zinc-900 border-2 border-zinc-800 hover:border-lime-400 hover:text-lime-400 text-zinc-300 font-bold uppercase tracking-widest text-lg md:text-xl px-4 md:px-8 py-4 md:py-6 flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95 w-full h-full"
               >
-                <Trophy size={28} /> Leaderboard
+                <Trophy size={28} className="shrink-0" /> Leaderboard
               </button>
             </motion.div>
 

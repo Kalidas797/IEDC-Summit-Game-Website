@@ -34,11 +34,14 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
       const { data: gameData } = await supabase.from('games').select('id').eq('slug', 'what-changed').single();
       if (!gameData) return setPhase('error');
       
-      const { data: settingsData } = await supabase
+      const { data: settingsDataArr } = await supabase
         .from('game_content').select('data')
-        .eq('game_id', gameData.id).eq('content_type', 'what-changed-settings').single();
+        .eq('game_id', gameData.id).eq('content_type', 'what-changed-settings')
+        .order('created_at', { ascending: false }).limit(1);
+      
+      const settingsData = settingsDataArr?.[0];
       const config = (settingsData?.data || {
-        questionsPerGame: 1,
+        questionsPerGame: 5,
         questionTimeLimit: 45,
         maxScorePerQuestion: 200,
         timeBasedScoringEnabled: true
@@ -65,7 +68,9 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
       setChallenges(selected);
       setCurrentChallengeIndex(0);
       setMemoryTimeLeft(selected[0].data?.memoryTime || 10);
-      setRecallTimeLeft(config.questionTimeLimit || selected[0].data?.timeLimit || 45);
+      const limit = Number(config.questionTimeLimit);
+      const itemLimit = Number(selected[0].data?.timeLimit);
+      setRecallTimeLeft(limit > 0 ? limit : (itemLimit > 0 ? itemLimit : 45));
       setPhase('memorize');
       startTimeRef.current = performance.now();
       challengeStartTimeRef.current = performance.now();
@@ -100,7 +105,9 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
         setCurrentChallengeIndex(nextIndex);
         setFoundRegions(new Set());
         setMemoryTimeLeft(challenges[nextIndex].data?.memoryTime || 10);
-        setRecallTimeLeft(settings?.questionTimeLimit || challenges[nextIndex].data?.timeLimit || 45);
+        const limit = Number(settings?.questionTimeLimit);
+        const itemLimit = Number(challenges[nextIndex].data?.timeLimit);
+        setRecallTimeLeft(limit > 0 ? limit : (itemLimit > 0 ? itemLimit : 45));
         setPhase('memorize');
         challengeStartTimeRef.current = performance.now();
         setLastPointsEarned(null);
