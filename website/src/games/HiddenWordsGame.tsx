@@ -52,7 +52,7 @@ export default function HiddenWordsGame({ onComplete, onExit }: HiddenWordsGameP
 
       const data = contentData.data as unknown as HiddenWordsContentData;
 
-      const { data: settingsData } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'hidden-words-settings').single();
+      const { data: settingsData } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'hidden-words-settings').maybeSingle();
       const config = (settingsData?.data || {
         questionsPerGame: 1,
         questionTimeLimit: data.timeLimit || 60,

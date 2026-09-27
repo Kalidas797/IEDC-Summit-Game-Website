@@ -71,7 +71,7 @@ export default function ColorWordGame({ onUpdateScore, onComplete }: ColorWordGa
     async function loadSettings() {
       const { data: gameData } = await supabase.from('games').select('id').eq('slug', 'color-word-challenge').single();
       if (gameData) {
-        const { data: settingsData } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'color-word-settings').single();
+        const { data: settingsData } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'color-word-settings').maybeSingle();
         const config = (settingsData?.data || {
           questionsPerGame: 10,
           questionTimeLimit: 3,

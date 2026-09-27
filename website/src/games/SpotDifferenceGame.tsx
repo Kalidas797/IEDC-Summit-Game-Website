@@ -315,7 +315,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
   );
 
   return (
-    <div className="flex-1 flex flex-col p-3 md:p-4 relative z-10 w-full max-w-[100rem] mx-auto min-h-0">
+    <div className="flex-1 flex flex-col p-3 md:p-4 relative z-10 w-full max-w-[100rem] mx-auto min-h-0 overflow-y-auto overflow-x-hidden">
 
       {/* Header — compact */}
       <div className="flex items-center justify-between mb-1 md:mb-2 gap-2 flex-wrap shrink-0">
@@ -389,53 +389,47 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
         )}
       </AnimatePresence>
 
-      {/* Images — aspect-video preserved for hitbox alignment; height-first sizing fills available space */}
-      <div className="flex-1 flex flex-col md:flex-row gap-2 md:gap-3 min-h-0">
-
+      {/* Images — guaranteed 16:9 with w-full aspect-video */}
+      <div className="flex-1 flex flex-col md:flex-row gap-4 md:gap-6 w-full items-start justify-center mt-2">
         {/* Original */}
-        <div className="flex-1 flex flex-col gap-0.5 min-h-0 min-w-0">
-          <span className="text-zinc-500 font-mono text-[10px] uppercase tracking-widest shrink-0">Original</span>
-          <div className="flex-1 min-h-0 flex items-center justify-center">
-            <div
-              ref={origContainerRef}
-              className="aspect-video h-full max-w-full relative bg-zinc-950 border-2 border-zinc-700 rounded-xl overflow-hidden select-none"
-              style={{ cursor: gameOver ? 'default' : 'crosshair' }}
-              onClick={(e) => handleClick(e, origContainerRef, 'orig')}
-              onTouchStart={(e) => { e.preventDefault(); handleClick(e, origContainerRef, 'orig'); }}
-            >
-              <img
-                src={origUrl}
-                alt="Original"
-                className="w-full h-full object-contain block pointer-events-none"
-                draggable={false}
-              />
-              {renderOverlay('orig')}
-            </div>
+        <div className="flex-1 flex flex-col gap-1 w-full max-w-4xl mx-auto">
+          <span className="text-zinc-500 font-mono text-[10px] uppercase tracking-widest text-center">Original</span>
+          <div
+            ref={origContainerRef}
+            className="w-full aspect-video relative bg-zinc-950 border-2 border-zinc-700 rounded-xl overflow-hidden select-none"
+            style={{ cursor: gameOver ? 'default' : 'crosshair' }}
+            onClick={(e) => handleClick(e, origContainerRef, 'orig')}
+            onTouchStart={(e) => { e.preventDefault(); handleClick(e, origContainerRef, 'orig'); }}
+          >
+            <img
+              src={origUrl}
+              alt="Original"
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+              draggable={false}
+            />
+            {renderOverlay('orig')}
           </div>
         </div>
 
         {/* Modified */}
-        <div className="flex-1 flex flex-col gap-0.5 min-h-0 min-w-0">
-          <span className="text-red-400 font-mono text-[10px] uppercase tracking-widest shrink-0">Modified — Tap differences ↓</span>
-          <div className="flex-1 min-h-0 flex items-center justify-center">
-            <div
-              ref={modContainerRef}
-              className="aspect-video h-full max-w-full relative bg-zinc-950 border-2 border-red-800/60 rounded-xl overflow-hidden select-none"
-              style={{ cursor: gameOver ? 'default' : 'crosshair' }}
-              onClick={(e) => handleClick(e, modContainerRef, 'mod')}
-              onTouchStart={(e) => { e.preventDefault(); handleClick(e, modContainerRef, 'mod'); }}
-            >
-              <img
-                src={modUrl}
-                alt="Modified"
-                className="w-full h-full object-contain block pointer-events-none"
-                draggable={false}
-              />
-              {renderOverlay('mod')}
-            </div>
+        <div className="flex-1 flex flex-col gap-1 w-full max-w-4xl mx-auto">
+          <span className="text-red-400 font-mono text-[10px] uppercase tracking-widest text-center">Modified — Tap differences ↓</span>
+          <div
+            ref={modContainerRef}
+            className="w-full aspect-video relative bg-zinc-950 border-2 border-red-800/60 rounded-xl overflow-hidden select-none"
+            style={{ cursor: gameOver ? 'default' : 'crosshair' }}
+            onClick={(e) => handleClick(e, modContainerRef, 'mod')}
+            onTouchStart={(e) => { e.preventDefault(); handleClick(e, modContainerRef, 'mod'); }}
+          >
+            <img
+              src={modUrl}
+              alt="Modified"
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+              draggable={false}
+            />
+            {renderOverlay('mod')}
           </div>
         </div>
-
       </div>
 
       <p className="mt-1 text-zinc-600 font-mono text-[10px] tracking-widest uppercase text-center shrink-0">

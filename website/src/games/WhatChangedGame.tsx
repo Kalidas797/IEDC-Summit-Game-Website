@@ -68,9 +68,9 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
       setChallenges(selected);
       setCurrentChallengeIndex(0);
       setMemoryTimeLeft(selected[0].data?.memoryTime || 10);
-      const limit = Number(config.questionTimeLimit);
+      const timeLimit = Number(config.questionTimeLimit);
       const itemLimit = Number(selected[0].data?.timeLimit);
-      setRecallTimeLeft(limit > 0 ? limit : (itemLimit > 0 ? itemLimit : 45));
+      setRecallTimeLeft(itemLimit > 0 ? itemLimit : (timeLimit > 0 ? timeLimit : 45));
       setPhase('memorize');
       startTimeRef.current = performance.now();
       challengeStartTimeRef.current = performance.now();
@@ -93,21 +93,25 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
   // Recall phase timer
   useEffect(() => {
     if (phase !== 'recall') return;
-    if (recallTimeLeft <= 0) { endGame(); return; }
+    if (recallTimeLeft <= 0) {
+      const t = endGame();
+      return () => clearTimeout(t);
+    }
     const timer = setTimeout(() => setRecallTimeLeft(t => t - 1), 1000);
     return () => clearTimeout(timer);
-  }, [recallTimeLeft, phase]);
+  }, [recallTimeLeft, phase, challenges, currentChallengeIndex]);
 
   const endGame = (finalScore?: number) => {
+    let t: ReturnType<typeof setTimeout>;
     if (currentChallengeIndex < challenges.length - 1) {
-      setTimeout(() => {
+      t = setTimeout(() => {
         const nextIndex = currentChallengeIndex + 1;
         setCurrentChallengeIndex(nextIndex);
         setFoundRegions(new Set());
         setMemoryTimeLeft(challenges[nextIndex].data?.memoryTime || 10);
-        const limit = Number(settings?.questionTimeLimit);
+        const timeLimit = Number(settings?.questionTimeLimit);
         const itemLimit = Number(challenges[nextIndex].data?.timeLimit);
-        setRecallTimeLeft(limit > 0 ? limit : (itemLimit > 0 ? itemLimit : 45));
+        setRecallTimeLeft(itemLimit > 0 ? itemLimit : (timeLimit > 0 ? timeLimit : 45));
         setPhase('memorize');
         challengeStartTimeRef.current = performance.now();
         setLastPointsEarned(null);
@@ -115,8 +119,9 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
     } else {
       setPhase('gameover');
       const totalTime = performance.now() - startTimeRef.current;
-      setTimeout(() => onComplete(finalScore !== undefined ? finalScore : score, totalTime), 2500);
+      t = setTimeout(() => onComplete(finalScore !== undefined ? finalScore : score, totalTime), 2500);
     }
+    return t;
   };
 
   const isPointInRegion = (px: number, py: number, r: DifferenceRegion) => {

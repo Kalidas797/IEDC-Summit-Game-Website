@@ -54,7 +54,7 @@ export default function SequenceMemoryGame({ onUpdateScore, onComplete }: Sequen
     async function loadSettings() {
       const { data: gameData } = await supabase.from('games').select('id').eq('slug', 'sequence-memory').single();
       if (gameData) {
-        const { data: settings } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'sequence-memory-settings').eq('is_active', true).single();
+        const { data: settings } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'sequence-memory-settings').eq('is_active', true).maybeSingle();
         if (settings) {
           setTotalRounds(settings.data?.rounds || 5);
           setBaseLength(settings.data?.baseLength || 3);

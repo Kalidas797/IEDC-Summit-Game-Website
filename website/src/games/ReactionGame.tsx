@@ -30,7 +30,7 @@ export default function ReactionGame({ onUpdateScore, onComplete }: ReactionGame
     async function loadSettings() {
       const { data: gameData } = await supabase.from('games').select('id').eq('slug', 'reaction').single();
       if (gameData) {
-        const { data: settings } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'reaction-settings').eq('is_active', true).single();
+        const { data: settings } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'reaction-settings').eq('is_active', true).maybeSingle();
         if (settings) {
           setMinWait(settings.data?.minWait || 2000);
           setMaxWait(settings.data?.maxWait || 6000);

@@ -91,7 +91,7 @@ export default function TicTacToeGame({ onUpdateScore, onComplete }: TicTacToeGa
     async function loadSettings() {
       const { data: gameData } = await supabase.from('games').select('id').eq('slug', 'tic-tac-toe').single();
       if (gameData) {
-        const { data: settings } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'tictactoe-settings').eq('is_active', true).single();
+        const { data: settings } = await supabase.from('game_content').select('*').eq('game_id', gameData.id).eq('content_type', 'tictactoe-settings').eq('is_active', true).maybeSingle();
         if (settings) {
           setDifficulty(settings.data?.difficulty || 'medium');
         }
