@@ -328,7 +328,7 @@ export default function DifferenceMarkerEditor({ originalImageUrl, modifiedImage
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
           <span className="font-mono text-xs uppercase text-zinc-400 tracking-widest">Original (Reference)</span>
-          <div className="relative bg-zinc-900 border border-white/10 rounded-lg overflow-hidden aspect-video">
+          <div className="w-full aspect-video relative bg-zinc-900 border border-white/10 rounded-lg overflow-hidden">
             <img src={originalImageUrl} alt="Original" className="w-full h-full object-contain" onLoad={() => setImagesLoaded(p => ({ ...p, orig: true }))} />
             <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
               {regions.map(r => renderShape(r, false))}
@@ -340,7 +340,7 @@ export default function DifferenceMarkerEditor({ originalImageUrl, modifiedImage
           <span className="font-mono text-xs uppercase text-zinc-400 tracking-widest">Modified — Draw Differences</span>
           <div
             ref={containerRef}
-            className="relative bg-zinc-900 border-2 border-cyan-400/30 rounded-lg overflow-hidden aspect-video select-none touch-none"
+            className="w-full aspect-video relative bg-zinc-900 border-2 border-cyan-400/30 rounded-lg overflow-hidden select-none touch-none"
             style={{ cursor: activeTool === 'select' ? 'default' : 'crosshair' }}
             onMouseDown={handlePointerDown}
             onMouseMove={handlePointerMove}
