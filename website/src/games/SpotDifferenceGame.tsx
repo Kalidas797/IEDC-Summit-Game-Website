@@ -67,12 +67,16 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
   const gameOverRef = useRef(false);
   const contentRef = useRef<GameContent | null>(null);
   const settingsRef = useRef<QuestionsPerGameSettingsData | null>(null);
+  const challengesRef = useRef<GameContent[]>([]);
+  const currentIndexRef = useRef(0);
 
   useEffect(() => { foundIdsRef.current = foundIds; }, [foundIds]);
   useEffect(() => { scoreRef.current = score; }, [score]);
   useEffect(() => { gameOverRef.current = gameOver; }, [gameOver]);
   useEffect(() => { contentRef.current = content; }, [content]);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
+  useEffect(() => { challengesRef.current = challenges; }, [challenges]);
+  useEffect(() => { currentIndexRef.current = currentChallengeIndex; }, [currentChallengeIndex]);
 
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -127,16 +131,16 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
   useEffect(() => {
     if (loading || gameOver || error) return;
     if (timeLeft <= 0) {
-      if (currentChallengeIndex < challenges.length - 1) {
+      if (currentIndexRef.current < challengesRef.current.length - 1) {
         setTimeout(() => {
-          const nextIndex = currentChallengeIndex + 1;
+          const nextIndex = currentIndexRef.current + 1;
           setCurrentChallengeIndex(nextIndex);
-          contentRef.current = challenges[nextIndex];
+          contentRef.current = challengesRef.current[nextIndex];
           setFoundIds(new Set());
           setAllFound(false);
           setWrongClicks([]);
           setLastPointsEarned(null);
-          setTimeLeft(settingsRef.current?.questionTimeLimit || challenges[nextIndex].data?.timeLimit || 60);
+          setTimeLeft(settingsRef.current?.questionTimeLimit || challengesRef.current[nextIndex].data?.timeLimit || 60);
           challengeStartTimeRef.current = performance.now();
         }, 2000);
       } else {
@@ -209,16 +213,16 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
         if (newFound.size === regions.length) {
           setAllFound(true);
           
-          if (currentChallengeIndex < challenges.length - 1) {
+          if (currentIndexRef.current < challengesRef.current.length - 1) {
             setTimeout(() => {
-              const nextIndex = currentChallengeIndex + 1;
+              const nextIndex = currentIndexRef.current + 1;
               setCurrentChallengeIndex(nextIndex);
-              contentRef.current = challenges[nextIndex];
+              contentRef.current = challengesRef.current[nextIndex];
               setFoundIds(new Set());
               setAllFound(false);
               setWrongClicks([]);
               setLastPointsEarned(null);
-              setTimeLeft(settingsRef.current?.questionTimeLimit || challenges[nextIndex].data?.timeLimit || 60);
+              setTimeLeft(settingsRef.current?.questionTimeLimit || challengesRef.current[nextIndex].data?.timeLimit || 60);
               challengeStartTimeRef.current = performance.now();
             }, 2000);
           } else {

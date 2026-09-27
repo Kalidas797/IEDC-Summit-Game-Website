@@ -93,7 +93,7 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
     return () => clearTimeout(timer);
   }, [recallTimeLeft, phase]);
 
-  const endGame = () => {
+  const endGame = (finalScore?: number) => {
     if (currentChallengeIndex < challenges.length - 1) {
       setTimeout(() => {
         const nextIndex = currentChallengeIndex + 1;
@@ -108,7 +108,7 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
     } else {
       setPhase('gameover');
       const totalTime = performance.now() - startTimeRef.current;
-      setTimeout(() => onComplete(score, totalTime), 2500);
+      setTimeout(() => onComplete(finalScore !== undefined ? finalScore : score, totalTime), 2500);
     }
   };
 
@@ -173,10 +173,7 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
         setLastPointsEarned(earned);
         found = true;
         if (newFound.size === regions.length) {
-          setScore(newScore);
-          setPhase('gameover');
-          const totalTime = performance.now() - startTimeRef.current;
-          setTimeout(() => onComplete(newScore, totalTime), 2500);
+          endGame(newScore);
         }
         break;
       }
