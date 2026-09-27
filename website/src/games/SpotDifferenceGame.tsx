@@ -60,6 +60,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
   const challengeStartTimeRef = useRef<number>(0);
   const [settings, setSettings] = useState<QuestionsPerGameSettingsData | null>(null);
   const [lastPointsEarned, setLastPointsEarned] = useState<number | null>(null);
+  const transitioningRef = useRef(false);
 
   // Use refs to avoid stale closures in callbacks
   const foundIdsRef = useRef<Set<string>>(new Set());
@@ -140,6 +141,8 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
     if (loading || gameOver || error) return;
     
     if (timeLeft <= 0) {
+      if (transitioningRef.current) return;
+      transitioningRef.current = true;
       let t: ReturnType<typeof setTimeout>;
       if (currentIndexRef.current < challengesRef.current.length - 1) {
         t = setTimeout(() => {
@@ -154,6 +157,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
           const itemLimit = Number(challengesRef.current[nextIndex].data?.timeLimit);
           setTimeLeft(itemLimit > 0 ? itemLimit : (timeLimit > 0 ? timeLimit : 60));
           challengeStartTimeRef.current = performance.now();
+          transitioningRef.current = false;
         }, 2000);
       } else {
         gameOverRef.current = true;
@@ -161,7 +165,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
         const elapsed = performance.now() - startTimeRef.current;
         t = setTimeout(() => onComplete(scoreRef.current, elapsed), 2000);
       }
-      return () => clearTimeout(t);
+      return;
     }
     const t = setTimeout(() => setTimeLeft(p => p - 1), 1000);
     return () => clearTimeout(t);
@@ -224,6 +228,8 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
 
         if (newFound.size === regions.length) {
           setAllFound(true);
+          if (transitioningRef.current) return;
+          transitioningRef.current = true;
           
           if (currentIndexRef.current < challengesRef.current.length - 1) {
             setTimeout(() => {
@@ -238,6 +244,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
               const itemLimit = Number(challengesRef.current[nextIndex].data?.timeLimit);
               setTimeLeft(itemLimit > 0 ? itemLimit : (timeLimit > 0 ? timeLimit : 60));
               challengeStartTimeRef.current = performance.now();
+              transitioningRef.current = false;
             }, 2000);
           } else {
             gameOverRef.current = true;

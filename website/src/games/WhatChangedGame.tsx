@@ -27,6 +27,7 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
   const imgRef = useRef<HTMLDivElement>(null);
   const startTimeRef = useRef<number>(0);
   const challengeStartTimeRef = useRef<number>(0);
+  const transitioningRef = useRef<boolean>(false);
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
   useEffect(() => {
@@ -94,14 +95,17 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
   useEffect(() => {
     if (phase !== 'recall') return;
     if (recallTimeLeft <= 0) {
-      const t = endGame();
-      return () => clearTimeout(t);
+      if (!transitioningRef.current) {
+        endGame();
+      }
+      return;
     }
     const timer = setTimeout(() => setRecallTimeLeft(t => t - 1), 1000);
     return () => clearTimeout(timer);
   }, [recallTimeLeft, phase, challenges, currentChallengeIndex]);
 
   const endGame = (finalScore?: number) => {
+    transitioningRef.current = true;
     let t: ReturnType<typeof setTimeout>;
     if (currentChallengeIndex < challenges.length - 1) {
       t = setTimeout(() => {
@@ -115,6 +119,7 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
         setPhase('memorize');
         challengeStartTimeRef.current = performance.now();
         setLastPointsEarned(null);
+        transitioningRef.current = false;
       }, 2000);
     } else {
       setPhase('gameover');
@@ -185,7 +190,9 @@ export default function WhatChangedGame({ onComplete, onExit: _onExit }: WhatCha
         setLastPointsEarned(earned);
         found = true;
         if (newFound.size === regions.length) {
-          endGame(newScore);
+          if (!transitioningRef.current) {
+            endGame(newScore);
+          }
         }
         break;
       }
