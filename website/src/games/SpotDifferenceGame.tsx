@@ -143,9 +143,8 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
     if (timeLeft <= 0) {
       if (transitioningRef.current) return;
       transitioningRef.current = true;
-      let t: ReturnType<typeof setTimeout>;
       if (currentIndexRef.current < challengesRef.current.length - 1) {
-        t = setTimeout(() => {
+        setTimeout(() => {
           const nextIndex = currentIndexRef.current + 1;
           setCurrentChallengeIndex(nextIndex);
           contentRef.current = challengesRef.current[nextIndex];
@@ -163,7 +162,7 @@ export default function SpotDifferenceGame({ onComplete, onExit: _onExit }: Spot
         gameOverRef.current = true;
         setGameOver(true);
         const elapsed = performance.now() - startTimeRef.current;
-        t = setTimeout(() => onComplete(scoreRef.current, elapsed), 2000);
+        setTimeout(() => onComplete(scoreRef.current, elapsed), 2000);
       }
       return;
     }
