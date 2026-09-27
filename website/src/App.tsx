@@ -279,7 +279,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans selection:bg-lime-400 selection:text-black overflow-x-hidden relative flex flex-col">
+    <div className="min-h-[100dvh] bg-zinc-950 text-zinc-100 font-sans selection:bg-lime-400 selection:text-black overflow-x-hidden relative flex flex-col">
       {/* Background Noise/Grid for Arcade Feel */}
       <div className="absolute inset-0 z-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at center, #18181b 1px, transparent 1px)', backgroundSize: '24px 24px', opacity: 0.4 }} />
 
@@ -321,10 +321,10 @@ export default function App() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
             >
-              <h2 className="text-lime-400 tracking-[0.3em] text-sm md:text-xl mb-6 font-mono font-bold uppercase">
+              <h2 className="text-lime-400 tracking-[0.3em] text-sm md:text-xl mb-4 md:mb-6 font-mono font-bold uppercase">
                 // PaperLab Games Arena
               </h2>
-              <h1 className="text-[clamp(2.5rem,10vw,8rem)] md:text-8xl lg:text-9xl font-black mb-12 uppercase leading-[0.9] tracking-tighter">
+              <h1 className="text-[clamp(2.5rem,10vw,8rem)] md:text-8xl lg:text-9xl font-black mb-8 md:mb-12 uppercase leading-[0.9] tracking-tighter">
                 Can you beat<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-lime-400 to-cyan-400 break-words">
                   the leaderboard?
@@ -336,23 +336,23 @@ export default function App() {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="flex flex-col md:flex-row gap-6 mb-16"
+              className="flex flex-col md:flex-row gap-4 md:gap-6 mb-4 md:mb-16 w-full max-w-sm md:max-w-none px-4 md:px-0"
             >
               <button 
                 onClick={handlePlayNow}
-                className="bg-lime-400 hover:bg-lime-300 text-zinc-950 font-black uppercase tracking-widest text-xl px-12 py-6 flex items-center gap-3 transition-transform hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(163,230,53,0.3)]"
+                className="bg-lime-400 hover:bg-lime-300 text-zinc-950 font-black uppercase tracking-widest text-lg md:text-xl px-8 md:px-12 py-4 md:py-6 flex items-center justify-center gap-3 transition-transform hover:scale-105 active:scale-95 shadow-[0_0_40px_rgba(163,230,53,0.3)]"
               >
-                <Play size={28} fill="currentColor" /> Play Now
+                <Play size={28} fill="currentColor" className="w-6 h-6 md:w-7 md:h-7" /> Play Now
               </button>
               <button 
                 onClick={handleRandomGame}
-                className="bg-zinc-900 border-2 border-zinc-800 hover:border-cyan-400 hover:text-cyan-400 text-zinc-300 font-bold uppercase tracking-widest text-xl px-12 py-6 flex items-center gap-3 transition-all hover:scale-105 active:scale-95"
+                className="bg-zinc-900 border-2 border-zinc-800 hover:border-cyan-400 hover:text-cyan-400 text-zinc-300 font-bold uppercase tracking-widest text-lg md:text-xl px-8 md:px-12 py-4 md:py-6 flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95"
               >
                 <Sparkles size={28} /> Random Game
               </button>
               <button 
                 onClick={() => setView('leaderboard')}
-                className="bg-zinc-900 border-2 border-zinc-800 hover:border-lime-400 hover:text-lime-400 text-zinc-300 font-bold uppercase tracking-widest text-xl px-12 py-6 flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95 md:col-span-2"
+                className="bg-zinc-900 border-2 border-zinc-800 hover:border-lime-400 hover:text-lime-400 text-zinc-300 font-bold uppercase tracking-widest text-lg md:text-xl px-8 md:px-12 py-4 md:py-6 flex items-center justify-center gap-3 transition-all hover:scale-105 active:scale-95 md:col-span-2"
               >
                 <Trophy size={28} /> Leaderboard
               </button>
