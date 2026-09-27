@@ -362,10 +362,6 @@ export default function App() {
               </button>
             </motion.div>
 
-            <div className="hidden md:block absolute bottom-8 left-8 text-left font-mono text-zinc-500 text-xs md:text-sm border-l-2 border-lime-400 pl-4 tracking-wider uppercase">
-              <p className="mb-1 text-zinc-400">STATION: #PL-892</p>
-              <p className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-lime-400 animate-pulse" /> SYSTEM ONLINE</p>
-            </div>
           </motion.div>
         )}
 
@@ -547,7 +543,7 @@ export default function App() {
       
       {/* Footer */}
       {(view === 'attract' || view === 'registration') && (
-        <footer className="absolute bottom-4 right-8 flex gap-4 text-xs font-mono uppercase tracking-widest text-zinc-500 z-50">
+        <footer className="absolute bottom-4 w-full flex justify-center gap-4 text-xs font-mono uppercase tracking-widest text-zinc-500 z-50">
           <a href="#privacy" onClick={(e) => { e.preventDefault(); setView('privacy'); }} className="hover:text-lime-400 transition-colors">Privacy Policy</a>
           <span>|</span>
           <a href="#terms" onClick={(e) => { e.preventDefault(); setView('terms'); }} className="hover:text-lime-400 transition-colors">Terms & Conditions</a>
