@@ -27,6 +27,8 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
   const [score, setScore] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [dbGameId, setDbGameId] = useState<string | null>(null);
+  const [dataSaved, setDataSaved] = useState(false);
+  const [finalTime, setFinalTime] = useState(0);
 
   // Unified Countdown logic for Intro state
   useEffect(() => {
@@ -76,6 +78,7 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
 
   const finishGame = async (finalScore: number, finalTimeMs: number) => {
     setScore(finalScore);
+    setFinalTime(finalTimeMs);
     setGameState('gameover');
     
     if (sessionId && dbGameId) {
@@ -94,9 +97,7 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
       if (error) console.error("Error saving score:", error);
     }
 
-    setTimeout(() => {
-      onGameComplete(finalScore, finalTimeMs);
-    }, 3000);
+    setDataSaved(true);
   };
 
   return (
@@ -198,7 +199,35 @@ export default function GameEngine({ gameId, playerId, onExit, onGameComplete }:
             <p className="text-2xl font-mono text-zinc-400 mb-8 uppercase tracking-widest">
               Final Score: <span className="text-white">{score}</span>
             </p>
-            <p className="text-cyan-400 animate-pulse font-mono text-sm uppercase">Transmitting data to mainframe...</p>
+            {!dataSaved ? (
+              <p className="text-cyan-400 animate-pulse font-mono text-sm uppercase">Transmitting data to mainframe...</p>
+            ) : (
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col gap-4 mt-4 w-full max-w-sm">
+                <button 
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'PaperLab Games Arena',
+                        text: `I just scored ${score} in the PaperLab Games Arena! Can you beat me?`,
+                        url: 'https://paperlabgamesarena.vercel.app/#attract',
+                      }).catch(console.error);
+                    } else {
+                      navigator.clipboard.writeText('https://paperlabgamesarena.vercel.app/#attract');
+                      alert('Link copied to clipboard!');
+                    }
+                  }}
+                  className="w-full py-4 bg-lime-500 text-black font-black uppercase tracking-widest text-lg hover:bg-lime-400 transition-transform hover:scale-105 active:scale-95 rounded-lg shadow-[0_0_20px_rgba(132,204,22,0.3)] flex items-center justify-center gap-2"
+                >
+                  Compete with Friends
+                </button>
+                <button 
+                  onClick={() => onGameComplete(score, finalTime)}
+                  className="w-full py-4 border-2 border-zinc-700 text-zinc-300 font-bold uppercase tracking-widest hover:border-zinc-500 hover:text-white transition-colors rounded-lg flex items-center justify-center gap-2"
+                >
+                  Return to Hub
+                </button>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
